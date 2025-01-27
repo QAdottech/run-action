@@ -6,6 +6,7 @@
 	"scripts": {
 		"format": "biome format --write .",
 		"lint": "biome lint --write .",
+		"lint:fix": "biome check --write .",
 		"build": "rimraf dist && ncc build src/index.ts -o dist",
 		"test": "vitest run"
 	},
