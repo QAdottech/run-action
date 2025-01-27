@@ -36782,6 +36782,14 @@ const validateUrl = (url) => {
         return false;
     }
 };
+const parseTestPlanIds = (input) => {
+    if (!input)
+        return [];
+    return input
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean);
+};
 const getStartRunUrl = (baseUrl, projectId) => `${baseUrl}/api/projects/${projectId}/runs`;
 async function run() {
     try {
@@ -36794,6 +36802,7 @@ async function run() {
         }
         const projectId = core.getInput("project_id", { required: true });
         const apiToken = core.getInput("api_token", { required: true });
+        const testPlanIds = parseTestPlanIds(core.getInput("test_plan_ids"));
         if (!projectId) {
             core.setFailed('The "project_id" input is required');
             return;
@@ -36811,6 +36820,10 @@ async function run() {
             commitHash: sha,
             repository: repo.repo,
         };
+        if (testPlanIds.length > 0) {
+            core.debug(`Including test plans: ${testPlanIds.join(", ")}`);
+            payload.testPlanShortIds = testPlanIds;
+        }
         core.debug(`Triggering QA.tech run with payload: ${JSON.stringify(payload)}`);
         const result = await triggerQATechRun(apiUrl, apiToken, payload);
         if (result.success !== undefined) {

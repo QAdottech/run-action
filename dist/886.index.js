@@ -387,7 +387,7 @@ async function toFormData(Body, ct) {
 	const decoder = new TextDecoder('utf-8');
 	decoder.decode();
 
-	parser.onPartBegin = () => {
+	parser.onPartBegin = function () {
 		parser.onPartData = onPartData;
 		parser.onPartEnd = appendEntryToFormData;
 
@@ -400,15 +400,15 @@ async function toFormData(Body, ct) {
 		entryChunks.length = 0;
 	};
 
-	parser.onHeaderField = (ui8a) => {
+	parser.onHeaderField = function (ui8a) {
 		headerField += decoder.decode(ui8a, {stream: true});
 	};
 
-	parser.onHeaderValue = (ui8a) => {
+	parser.onHeaderValue = function (ui8a) {
 		headerValue += decoder.decode(ui8a, {stream: true});
 	};
 
-	parser.onHeaderEnd = () => {
+	parser.onHeaderEnd = function () {
 		headerValue += decoder.decode();
 		headerField = headerField.toLowerCase();
 
