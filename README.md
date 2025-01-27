@@ -6,7 +6,10 @@ This action integrates your GitHub workflow with QA.tech, triggering test runs a
 
 ```yaml
 name: QA.tech Tests
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   test:
@@ -40,7 +43,7 @@ You can find your project ID and generate an API token in your [QA.tech project 
 
 ## Test Plans
 
-You can specify which test plans to run by providing their IDs in the `test_plan_short_ids` input. Multiple test plans should be separated by commas. For example:
+You can specify which test plans to run by providing their IDs in the `test_plan_ids` input. Multiple test plans should be separated by commas. For example:
 
 ```yaml
 - uses: QAdottech/run-action@v1
