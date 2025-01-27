@@ -16,7 +16,6 @@ jobs:
         with:
           project_id: 'your-project-id'
           api_token: ${{ secrets.QATECH_API_TOKEN }}
-          api_url: 'https://custom.qa.tech' # Optional, defaults to https://app.qa.tech
           test_plan_ids: 'plan1,plan2,plan3' # Optional, comma-separated list of test plan IDs
 ```
 
@@ -26,7 +25,10 @@ jobs:
 |-------|-------------|----------|---------|
 | `project_id` | Your QA.tech project ID | Yes | - |
 | `api_token` | QA.tech API token | Yes | - |
-| `test_plan_ids` | Comma-separated list of test plan short IDs to run | No | - |
+| `api_url` | Custom API URL if needed | No | <https://app.qa.tech> |
+| `test_plan_ids` | Comma-separated list of test plan IDs to run | No | - |
+
+You can find your project ID and generate an API token in your [QA.tech project settings](https://app.qa.tech/dashboard/current-project/settings/integrations).
 
 ## Outputs
 
