@@ -25,6 +25,7 @@
 	"keywords": ["QA", "actions", "QA.tech"],
 	"author": "QA Tech AB",
 	"license": "ISC",
+	"packageManager": "pnpm@9.13.2",
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
 		"@types/node": "^22.10.7",

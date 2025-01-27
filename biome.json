@@ -26,5 +26,13 @@
 		"formatter": {
 			"quoteStyle": "double"
 		}
+	},
+	"json": {
+		"parser": {
+			"allowComments": true
+		},
+		"formatter": {
+			"enabled": true
+		}
 	}
 }
