@@ -1,7 +1,7 @@
 // src/__tests__/index.test.ts
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as core from "@actions/core";
-import * as github from "@actions/github";
+import type * as github from "@actions/github";
 import { triggerQATechRun } from "../api-client";
 import { run } from "../index";
 
