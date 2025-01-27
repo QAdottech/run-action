@@ -13,7 +13,7 @@ const validateUrl = (url: string): boolean => {
 	}
 };
 
-const parseTestPlanIds = (input: string): string[] => {
+const parseTestPlanShortIds = (input: string): string[] => {
 	if (!input) return [];
 	return input
 		.split(",")
@@ -37,7 +37,9 @@ export async function run(): Promise<void> {
 
 		const projectId = core.getInput("project_id", { required: true });
 		const apiToken = core.getInput("api_token", { required: true });
-		const testPlanIds = parseTestPlanIds(core.getInput("test_plan_ids"));
+		const testPlanShortIds = parseTestPlanShortIds(
+			core.getInput("test_plan_short_ids"),
+		);
 
 		if (!projectId) {
 			core.setFailed('The "project_id" input is required');
@@ -60,9 +62,9 @@ export async function run(): Promise<void> {
 			repository: repo.repo,
 		};
 
-		if (testPlanIds.length > 0) {
-			core.debug(`Including test plans: ${testPlanIds.join(", ")}`);
-			payload.testPlanShortIds = testPlanIds;
+		if (testPlanShortIds.length > 0) {
+			core.debug(`Including test plans: ${testPlanShortIds.join(", ")}`);
+			payload.testPlanShortIds = testPlanShortIds;
 		}
 
 		core.debug(

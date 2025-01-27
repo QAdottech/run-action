@@ -33,7 +33,7 @@ describe("GitHub Action", () => {
 					return "test-token-12345";
 				case "api_url":
 					return "";
-				case "test_plan_ids":
+				case "test_plan_short_ids":
 					return "";
 				default:
 					return "";
@@ -87,7 +87,7 @@ describe("GitHub Action", () => {
 		const testPlans = "plan1,plan2, plan3";
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
-				case "test_plan_ids":
+				case "test_plan_short_ids":
 					return testPlans;
 				case "project_id":
 					return "test-project";
@@ -162,7 +162,7 @@ describe("GitHub Action", () => {
 	it("should handle malformed test plan IDs", async () => {
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
-				case "test_plan_ids":
+				case "test_plan_short_ids":
 					return ",,test1,,test2,,";
 				case "project_id":
 					return "test-project";

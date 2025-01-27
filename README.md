@@ -16,7 +16,7 @@ jobs:
         with:
           project_id: 'your-project-id'
           api_token: ${{ secrets.QATECH_API_TOKEN }}
-          test_plan_ids: 'plan1,plan2,plan3' # Optional, comma-separated list of test plan IDs
+          test_plan_short_ids: 'plan1,plan2,plan3' # Optional, comma-separated list of test plan IDs
 ```
 
 ## Inputs
@@ -26,7 +26,7 @@ jobs:
 | `project_id` | Your QA.tech project ID | Yes | - |
 | `api_token` | QA.tech API token | Yes | - |
 | `api_url` | Custom API URL if needed | No | <https://app.qa.tech> |
-| `test_plan_ids` | Comma-separated list of test plan IDs to run | No | - |
+| `test_plan_short_ids` | Comma-separated list of test plan IDs to run | No | - |
 
 You can find your project ID and generate an API token in your [QA.tech project settings](https://app.qa.tech/dashboard/current-project/settings/integrations).
 
@@ -40,14 +40,14 @@ You can find your project ID and generate an API token in your [QA.tech project 
 
 ## Test Plans
 
-You can specify which test plans to run by providing their IDs in the `test_plan_ids` input. Multiple test plans should be separated by commas. For example:
+You can specify which test plans to run by providing their IDs in the `test_plan_short_ids` input. Multiple test plans should be separated by commas. For example:
 
 ```yaml
 - uses: QAdottech/run-action@v1
   with:
     project_id: 'your-project-id'
     api_token: ${{ secrets.QATECH_API_TOKEN }}
-    test_plan_ids: 'plan1,plan2,plan3'
+    test_plan_short_ids: 'plan1,plan2,plan3'
 ```
 
 ## Development
