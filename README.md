@@ -12,7 +12,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: qatech/run-action@v1
+      - uses: QAdottech/run-action@v1
         with:
           project_id: 'your-project-id'
           api_token: ${{ secrets.QATECH_API_TOKEN }}
@@ -43,7 +43,7 @@ You can find your project ID and generate an API token in your [QA.tech project 
 You can specify which test plans to run by providing their IDs in the `test_plan_ids` input. Multiple test plans should be separated by commas. For example:
 
 ```yaml
-- uses: qatech/run-action@v1
+- uses: QAdottech/run-action@v1
   with:
     project_id: 'your-project-id'
     api_token: ${{ secrets.QATECH_API_TOKEN }}
