@@ -12,6 +12,9 @@ inputs:
   api_url:
     description: 'The API url for QA.techs API. Defaults to production.'
     required: false
+  test_plan_ids:
+    description: 'The test plan IDs to run the tests in.'
+    required: false
 
 outputs:
   success:
