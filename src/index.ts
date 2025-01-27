@@ -33,7 +33,6 @@ export async function run(): Promise<void> {
 		const overrideApiUrl = core.getInput("api_url");
 		const baseApiUrl = overrideApiUrl.length === 0 ? BASE_URL : overrideApiUrl;
 		const blocking = core.getBooleanInput("blocking");
-
 		if (!validateUrl(baseApiUrl)) {
 			core.setFailed(`Invalid API URL: ${baseApiUrl}`);
 			return;

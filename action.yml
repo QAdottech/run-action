@@ -15,6 +15,10 @@ inputs:
   test_plan_short_ids:
     description: 'The test plan IDs to run the tests in.'
     required: false
+  blocking:
+    description: 'Whether the run should be blocking.'
+    required: false
+    default: 'false'
 
 outputs:
   success:
