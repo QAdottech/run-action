@@ -1,8 +1,5 @@
 name: 'Run QA.tech'
-description: |-
-  Run QA.tech tests on your codebase.
-  This action will run your tests on the QA.tech platform.
-  For more information, visit https://qa.tech
+description: 'This action will run your tests on the QA.tech platform.'
 author: 'QA Tech AB'
 
 inputs:
