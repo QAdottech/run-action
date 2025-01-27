@@ -1,4 +1,4 @@
-# QA.tech GitHub Action
+# run-action @ qa.tech
 
 This action integrates your GitHub workflow with QA.tech, triggering test runs automatically when configured events occur.
 
