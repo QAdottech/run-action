@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import { triggerQATechRun, type Payload } from "./api-client";
+import { type Payload, triggerQATechRun } from "./api-client";
 
 const BASE_URL = "https://app.qa.tech";
 

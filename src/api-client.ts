@@ -1,5 +1,5 @@
-import fetch from "node-fetch";
 import * as core from "@actions/core";
+import fetch from "node-fetch";
 
 export interface RunDetails {
 	id: string;
