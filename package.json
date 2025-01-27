@@ -17,14 +17,14 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+"
+		"url": "https://github.com/QAdottech/run-action.git"
 	},
 	"bugs": {
-		"url": ""
+		"url": "https://github.com/QAdottech/run-action/issues"
 	},
 	"keywords": ["QA", "actions", "QA.tech"],
 	"author": "QA Tech AB",
-	"license": "ISC",
+	"license": "MIT",
 	"packageManager": "pnpm@9.13.2",
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
