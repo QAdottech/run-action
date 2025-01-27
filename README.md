@@ -24,7 +24,6 @@ jobs:
 |-------|-------------|----------|---------|
 | `project_id` | Your QA.tech project ID | Yes | - |
 | `api_token` | QA.tech API token | Yes | - |
-| `api_url` | Custom API URL if needed | No | <https://app.qa.tech> |
 
 ## Outputs
 
