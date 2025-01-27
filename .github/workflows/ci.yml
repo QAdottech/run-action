@@ -41,7 +41,7 @@ jobs:
         run: pnpm install
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm biome ci .
 
       - name: Run tests
         run: pnpm test
