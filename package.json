@@ -1,0 +1,45 @@
+{
+	"name": "run-action",
+	"version": "1.0.0",
+	"description": "This action will run your tests on the QA.tech platform.",
+	"type": "module",
+	"scripts": {
+		"format": "biome format --write .",
+		"lint": "biome lint --write .",
+		"build": "rimraf dist && ncc build src/index.ts -o dist",
+		"local-action": "npx local-action . src/index.ts .env"
+	},
+	"exports": {
+		".": "./dist/index.js"
+	},
+	"engines": {
+		"node": ">=20"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+"
+	},
+	"bugs": {
+		"url": ""
+	},
+	"keywords": [
+		"QA",
+		"actions",
+		"QA.tech"
+	],
+	"author": "QA Tech AB",
+	"license": "ISC",
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/node": "^22.10.7",
+		"@vercel/ncc": "^0.38.3",
+		"local-action": "^1.0.0",
+		"rimraf": "^6.0.1",
+		"typescript": "^5.7.3"
+	},
+	"dependencies": {
+		"@actions/core": "^1.11.1",
+		"@actions/github": "^6.0.0",
+		"node-fetch": "^3.3.2"
+	}
+}

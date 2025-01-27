@@ -1,0 +1,31 @@
+name: 'Run QA.tech'
+description: |-
+  Run QA.tech tests on your codebase.
+  This action will run your tests on the QA.tech platform.
+  For more information, visit https://qa.tech
+author: 'QA Tech AB'
+
+inputs:
+  project_id:
+    description: 'The project ID for the QA.tech project.'
+    required: true
+  api_token:
+    description: 'The API key for the QA.tech project.'
+    required: true
+  api_url:
+    description: 'The API url for QA.techs API. Defaults to production.'
+    required: false
+
+outputs:
+  success:
+    description: 'Whether the run was created successfully.'
+  runShortId:
+    description: 'The short ID of the run.'
+
+branding:
+  icon: 'user-check'
+  color: 'black'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
