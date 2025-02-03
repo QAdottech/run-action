@@ -77,8 +77,8 @@ export async function run(): Promise<void> {
 		const result = await triggerQATechRun(apiUrl, apiToken, payload);
 
 		if (result.run) {
-			core.setOutput("runId", result.run.id);
-			core.setOutput("runShortId", result.run.shortId);
+			core.setOutput("run_created", "true");
+			core.setOutput("run_short_id", result.run.shortId);
 			core.info(
 				`QA.tech run started with ID: ${result.run.id}, Short ID: ${result.run.shortId}`,
 			);
@@ -99,6 +99,9 @@ export async function run(): Promise<void> {
 					);
 
 					if (status.status === "COMPLETED") {
+						core.setOutput("run_status", status.status);
+						core.setOutput("run_result", status.result);
+
 						if (status.result === "FAILED") {
 							core.setFailed("Test run failed");
 							return;
@@ -113,13 +116,9 @@ export async function run(): Promise<void> {
 						}
 					}
 
-					if (status.status === "ERROR") {
-						core.setFailed("Test run encountered an error");
-						return;
-					}
-
-					if (status.status === "CANCELLED") {
-						core.setFailed("Test run was cancelled");
+					if (status.status === "ERROR" || status.status === "CANCELLED") {
+						core.setOutput("run_status", status.status);
+						core.setFailed(`Test run ${status.status.toLowerCase()}`);
 						return;
 					}
 
@@ -128,6 +127,7 @@ export async function run(): Promise<void> {
 				}
 			}
 		} else {
+			core.setOutput("run_created", "false");
 			core.setFailed("No run details returned from API");
 			return;
 		}
