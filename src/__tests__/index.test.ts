@@ -348,4 +348,51 @@ describe("GitHub Action", () => {
 		expect(core.setOutput).toHaveBeenCalledWith("run_result", "FAILED");
 		expect(core.setFailed).toHaveBeenCalledWith("Test run failed");
 	});
+
+	it("should poll status updates in blocking mode until completion", async () => {
+		vi.useFakeTimers();
+
+		vi.mocked(core.getBooleanInput).mockImplementation((name) => {
+			return name === "blocking";
+		});
+
+		const mockRunResponse = {
+			run: {
+				id: "test-id",
+				shortId: "short-id",
+			},
+		};
+
+		const runningStatus = {
+			id: "test-id",
+			short_id: "short-id",
+			status: "RUNNING" as const,
+			result: null,
+		};
+
+		const completedStatus = {
+			id: "test-id",
+			short_id: "short-id",
+			status: "COMPLETED" as const,
+			result: "PASSED" as const,
+		};
+
+		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
+		vi.mocked(getRunStatus)
+			.mockResolvedValueOnce(runningStatus)
+			.mockResolvedValueOnce(runningStatus)
+			.mockResolvedValueOnce(completedStatus);
+
+		const runPromise = run();
+
+		// Fast-forward through the polling delays
+		await vi.runAllTimersAsync();
+		await runPromise;
+
+		expect(getRunStatus).toHaveBeenCalledTimes(3);
+		expect(core.setOutput).toHaveBeenCalledWith("run_status", "COMPLETED");
+		expect(core.setOutput).toHaveBeenCalledWith("run_result", "PASSED");
+
+		vi.useRealTimers();
+	});
 });
