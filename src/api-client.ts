@@ -4,6 +4,7 @@ import fetch from "node-fetch";
 export interface RunDetails {
 	id: string;
 	shortId: string;
+	url: string;
 }
 
 export interface Payload {

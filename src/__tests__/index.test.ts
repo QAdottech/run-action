@@ -49,6 +49,7 @@ describe("GitHub Action", () => {
 			run: {
 				id: "test-id",
 				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
 			},
 		};
 
@@ -69,6 +70,11 @@ describe("GitHub Action", () => {
 		);
 		expect(core.setOutput).toHaveBeenCalledWith("run_created", "true");
 		expect(core.setOutput).toHaveBeenCalledWith("run_short_id", "short-id");
+		expect(core.info).toHaveBeenCalledWith(
+			expect.stringContaining(
+				"View run at: https://app.qa.tech/dashboard/p/test-project/results/short-id",
+			),
+		);
 		expect(core.setFailed).not.toHaveBeenCalled();
 	});
 
@@ -104,6 +110,7 @@ describe("GitHub Action", () => {
 			run: {
 				id: "test-id",
 				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
 			},
 		};
 
@@ -145,6 +152,7 @@ describe("GitHub Action", () => {
 			run: {
 				id: "test-id",
 				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
 			},
 		};
 
@@ -179,6 +187,7 @@ describe("GitHub Action", () => {
 			run: {
 				id: "test-id",
 				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
 			},
 		};
 
@@ -274,6 +283,7 @@ describe("GitHub Action", () => {
 			run: {
 				id: "test-id",
 				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
 			},
 		};
 		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
@@ -296,6 +306,7 @@ describe("GitHub Action", () => {
 			run: {
 				id: "test-id",
 				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
 			},
 		};
 
@@ -315,6 +326,11 @@ describe("GitHub Action", () => {
 		expect(core.setOutput).toHaveBeenCalledWith("run_short_id", "short-id");
 		expect(core.setOutput).toHaveBeenCalledWith("run_status", "COMPLETED");
 		expect(core.setOutput).toHaveBeenCalledWith("run_result", "PASSED");
+		expect(core.info).toHaveBeenCalledWith(
+			expect.stringContaining(
+				"Test run completed successfully. View results at:",
+			),
+		);
 		expect(core.setFailed).not.toHaveBeenCalled();
 	});
 
@@ -327,6 +343,7 @@ describe("GitHub Action", () => {
 			run: {
 				id: "test-id",
 				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
 			},
 		};
 
@@ -346,7 +363,9 @@ describe("GitHub Action", () => {
 		expect(core.setOutput).toHaveBeenCalledWith("run_short_id", "short-id");
 		expect(core.setOutput).toHaveBeenCalledWith("run_status", "COMPLETED");
 		expect(core.setOutput).toHaveBeenCalledWith("run_result", "FAILED");
-		expect(core.setFailed).toHaveBeenCalledWith("Test run failed");
+		expect(core.setFailed).toHaveBeenCalledWith(
+			expect.stringContaining("Test run failed. View results at:"),
+		);
 	});
 
 	it("should poll status updates in blocking mode until completion", async () => {
@@ -360,6 +379,7 @@ describe("GitHub Action", () => {
 			run: {
 				id: "test-id",
 				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
 			},
 		};
 
@@ -392,6 +412,11 @@ describe("GitHub Action", () => {
 		expect(getRunStatus).toHaveBeenCalledTimes(3);
 		expect(core.setOutput).toHaveBeenCalledWith("run_status", "COMPLETED");
 		expect(core.setOutput).toHaveBeenCalledWith("run_result", "PASSED");
+		expect(core.info).toHaveBeenCalledWith(
+			expect.stringContaining(
+				"Test run completed successfully. View results at:",
+			),
+		);
 
 		vi.useRealTimers();
 	});
