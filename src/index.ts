@@ -118,7 +118,7 @@ export async function run(): Promise<void> {
 
 					if (status.status === "ERROR" || status.status === "CANCELLED") {
 						core.setOutput("run_status", status.status);
-						core.setFailed(`Test run ${status.status.toLowerCase()}`);
+						core.setFailed(`Run ${status.status.toLowerCase()}`);
 						return;
 					}
 
