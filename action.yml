@@ -26,7 +26,7 @@ outputs:
   run_status:
     description: 'The final status of the run (INITIATED, RUNNING, COMPLETED, ERROR, or CANCELLED). Only set when blocking is true.'
   run_result:
-    description: 'The test execution result (PASSED, FAILED, or SKIPPED). Only set when blocking is true and status is COMPLETED.'
+    description: 'The test execution result (PASSED, FAILED, or SKIPPED). Only set when blocking is true.'
   run_short_id:
     description: 'The short ID of the run.'
 
