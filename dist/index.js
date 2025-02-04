@@ -39312,12 +39312,36 @@ const triggerQATechRun = async (apiUrl, apiToken, payload) => {
         throw error;
     }
 };
+const getRunStatus = async (baseUrl, projectId, shortId, apiToken) => {
+    try {
+        const response = await fetch(`${baseUrl}/api/projects/${projectId}/runs/${shortId}`, {
+            headers: {
+                Authorization: `Bearer ${apiToken}`,
+            },
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status} - ${await response.text()}`);
+        }
+        const data = (await response.json());
+        return data;
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            core.error(`Error getting run status: ${error.message}`);
+        }
+        else {
+            core.error("An unknown error occurred getting run status");
+        }
+        throw error;
+    }
+};
 
 ;// CONCATENATED MODULE: ./src/index.ts
 
 
 
 const BASE_URL = "https://app.qa.tech";
+const POLLING_INTERVAL = 20000; // 20 seconds in milliseconds
 const validateUrl = (url) => {
     try {
         new URL(url);
@@ -39327,6 +39351,7 @@ const validateUrl = (url) => {
         return false;
     }
 };
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const parseTestPlanShortIds = (input) => {
     if (!input)
         return [];
@@ -39341,6 +39366,7 @@ async function run() {
         core.debug("Starting the action");
         const overrideApiUrl = core.getInput("api_url");
         const baseApiUrl = overrideApiUrl.length === 0 ? BASE_URL : overrideApiUrl;
+        const blocking = core.getBooleanInput("blocking");
         if (!validateUrl(baseApiUrl)) {
             core.setFailed(`Invalid API URL: ${baseApiUrl}`);
             return;
@@ -39371,14 +39397,46 @@ async function run() {
         }
         core.debug(`Triggering QA.tech run with payload: ${JSON.stringify(payload)}`);
         const result = await triggerQATechRun(apiUrl, apiToken, payload);
-        if (result.success !== undefined) {
-            core.setOutput("success", result.success);
-            core.info(`QA.tech run success: ${result.success}`);
-        }
-        else if (result.run) {
-            core.setOutput("runId", result.run.id);
-            core.setOutput("runShortId", result.run.shortId);
+        if (result.run) {
+            core.setOutput("run_created", "true");
+            core.setOutput("run_short_id", result.run.shortId);
             core.info(`QA.tech run started with ID: ${result.run.id}, Short ID: ${result.run.shortId}`);
+            core.info(`View run at: ${result.run.url}`);
+            if (blocking) {
+                core.info(`Waiting for test results... (${result.run.url})`);
+                while (true) {
+                    const status = await getRunStatus(baseApiUrl, projectId, result.run.shortId, apiToken);
+                    core.info(`Current status: ${status.status}, Result: ${status.result || "pending"}`);
+                    if (status.status === "COMPLETED") {
+                        core.setOutput("run_status", status.status);
+                        core.setOutput("run_result", status.result);
+                        if (status.result === "FAILED") {
+                            core.setFailed(`Test run failed. View results at: ${result.run.url}`);
+                            return;
+                        }
+                        if (status.result === "PASSED") {
+                            core.info(`Test run completed successfully. View results at: ${result.run.url}`);
+                            return;
+                        }
+                        if (status.result === "SKIPPED") {
+                            core.warning(`Test run was skipped. View details at: ${result.run.url}`);
+                            return;
+                        }
+                    }
+                    if (status.status === "ERROR" || status.status === "CANCELLED") {
+                        core.setOutput("run_status", status.status);
+                        core.setFailed(`Run ${status.status.toLowerCase()}. View details at: ${result.run.url}`);
+                        return;
+                    }
+                    // If still running or initiated, wait and check again
+                    await sleep(POLLING_INTERVAL);
+                }
+            }
+        }
+        else {
+            core.setOutput("run_created", "false");
+            core.setFailed("No run details returned from API");
+            return;
         }
     }
     catch (error) {

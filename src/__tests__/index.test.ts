@@ -2,11 +2,14 @@ import * as core from "@actions/core";
 import type * as github from "@actions/github";
 // src/__tests__/index.test.ts
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { triggerQATechRun } from "../api-client";
+import { getRunStatus, triggerQATechRun } from "../api-client";
 import { run } from "../index";
 
 vi.mock("@actions/core");
-vi.mock("../api-client");
+vi.mock("../api-client", () => ({
+	triggerQATechRun: vi.fn(),
+	getRunStatus: vi.fn(),
+}));
 vi.mock("@actions/github", () => ({
 	default: vi.fn(),
 	context: {
@@ -46,6 +49,7 @@ describe("GitHub Action", () => {
 			run: {
 				id: "test-id",
 				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
 			},
 		};
 
@@ -64,23 +68,27 @@ describe("GitHub Action", () => {
 				repository: "test-repo",
 			},
 		);
-		expect(core.setOutput).toHaveBeenCalledWith("runId", "test-id");
-		expect(core.setOutput).toHaveBeenCalledWith("runShortId", "short-id");
+		expect(core.setOutput).toHaveBeenCalledWith("run_created", "true");
+		expect(core.setOutput).toHaveBeenCalledWith("run_short_id", "short-id");
+		expect(core.info).toHaveBeenCalledWith(
+			expect.stringContaining(
+				"View run at: https://app.qa.tech/dashboard/p/test-project/results/short-id",
+			),
+		);
 		expect(core.setFailed).not.toHaveBeenCalled();
 	});
 
-	it("should successfully start a run and set success output", async () => {
-		const mockRunResponse = {
-			success: true,
-		};
+	it("should handle failed run creation", async () => {
+		const mockRunResponse = {};
 
 		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
 
 		await run();
 
-		expect(core.setOutput).toHaveBeenCalledWith("success", true);
-		expect(core.info).toHaveBeenCalledWith("QA.tech run success: true");
-		expect(core.setFailed).not.toHaveBeenCalled();
+		expect(core.setOutput).toHaveBeenCalledWith("run_created", "false");
+		expect(core.setFailed).toHaveBeenCalledWith(
+			"No run details returned from API",
+		);
 	});
 
 	it("should successfully start a run with test plans", async () => {
@@ -102,6 +110,7 @@ describe("GitHub Action", () => {
 			run: {
 				id: "test-id",
 				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
 			},
 		};
 
@@ -143,6 +152,7 @@ describe("GitHub Action", () => {
 			run: {
 				id: "test-id",
 				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
 			},
 		};
 
@@ -177,6 +187,7 @@ describe("GitHub Action", () => {
 			run: {
 				id: "test-id",
 				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
 			},
 		};
 
@@ -272,6 +283,7 @@ describe("GitHub Action", () => {
 			run: {
 				id: "test-id",
 				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
 			},
 		};
 		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
@@ -283,5 +295,129 @@ describe("GitHub Action", () => {
 			"test-token-12345",
 			expect.any(Object),
 		);
+	});
+
+	it("should handle blocking mode with successful completion", async () => {
+		vi.mocked(core.getBooleanInput).mockImplementation((name) => {
+			return name === "blocking";
+		});
+
+		const mockRunResponse = {
+			run: {
+				id: "test-id",
+				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+			},
+		};
+
+		const mockStatusResponse = {
+			id: "test-id",
+			short_id: "short-id",
+			status: "COMPLETED" as const,
+			result: "PASSED" as const,
+		};
+
+		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
+		vi.mocked(getRunStatus).mockResolvedValueOnce(mockStatusResponse);
+
+		await run();
+
+		expect(core.setOutput).toHaveBeenCalledWith("run_created", "true");
+		expect(core.setOutput).toHaveBeenCalledWith("run_short_id", "short-id");
+		expect(core.setOutput).toHaveBeenCalledWith("run_status", "COMPLETED");
+		expect(core.setOutput).toHaveBeenCalledWith("run_result", "PASSED");
+		expect(core.info).toHaveBeenCalledWith(
+			expect.stringContaining(
+				"Test run completed successfully. View results at:",
+			),
+		);
+		expect(core.setFailed).not.toHaveBeenCalled();
+	});
+
+	it("should handle blocking mode with failed completion", async () => {
+		vi.mocked(core.getBooleanInput).mockImplementation((name) => {
+			return name === "blocking";
+		});
+
+		const mockRunResponse = {
+			run: {
+				id: "test-id",
+				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+			},
+		};
+
+		const mockStatusResponse = {
+			id: "test-id",
+			short_id: "short-id",
+			status: "COMPLETED" as const,
+			result: "FAILED" as const,
+		};
+
+		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
+		vi.mocked(getRunStatus).mockResolvedValueOnce(mockStatusResponse);
+
+		await run();
+
+		expect(core.setOutput).toHaveBeenCalledWith("run_created", "true");
+		expect(core.setOutput).toHaveBeenCalledWith("run_short_id", "short-id");
+		expect(core.setOutput).toHaveBeenCalledWith("run_status", "COMPLETED");
+		expect(core.setOutput).toHaveBeenCalledWith("run_result", "FAILED");
+		expect(core.setFailed).toHaveBeenCalledWith(
+			expect.stringContaining("Test run failed. View results at:"),
+		);
+	});
+
+	it("should poll status updates in blocking mode until completion", async () => {
+		vi.useFakeTimers();
+
+		vi.mocked(core.getBooleanInput).mockImplementation((name) => {
+			return name === "blocking";
+		});
+
+		const mockRunResponse = {
+			run: {
+				id: "test-id",
+				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+			},
+		};
+
+		const runningStatus = {
+			id: "test-id",
+			short_id: "short-id",
+			status: "RUNNING" as const,
+			result: null,
+		};
+
+		const completedStatus = {
+			id: "test-id",
+			short_id: "short-id",
+			status: "COMPLETED" as const,
+			result: "PASSED" as const,
+		};
+
+		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
+		vi.mocked(getRunStatus)
+			.mockResolvedValueOnce(runningStatus)
+			.mockResolvedValueOnce(runningStatus)
+			.mockResolvedValueOnce(completedStatus);
+
+		const runPromise = run();
+
+		// Fast-forward through the polling delays
+		await vi.runAllTimersAsync();
+		await runPromise;
+
+		expect(getRunStatus).toHaveBeenCalledTimes(3);
+		expect(core.setOutput).toHaveBeenCalledWith("run_status", "COMPLETED");
+		expect(core.setOutput).toHaveBeenCalledWith("run_result", "PASSED");
+		expect(core.info).toHaveBeenCalledWith(
+			expect.stringContaining(
+				"Test run completed successfully. View results at:",
+			),
+		);
+
+		vi.useRealTimers();
 	});
 });

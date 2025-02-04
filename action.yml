@@ -15,11 +15,19 @@ inputs:
   test_plan_short_ids:
     description: 'The test plan IDs to run the tests in.'
     required: false
+  blocking:
+    description: 'Whether the run should be blocking.'
+    required: false
+    default: 'false'
 
 outputs:
-  success:
-    description: 'Whether the run was created successfully.'
-  runShortId:
+  run_created:
+    description: 'Whether the test run was created successfully on QA.tech.'
+  run_status:
+    description: 'The final status of the run (INITIATED, RUNNING, COMPLETED, ERROR, or CANCELLED). Only set when blocking is true.'
+  run_result:
+    description: 'The test execution result (PASSED, FAILED, or SKIPPED). Only set when blocking is true.'
+  run_short_id:
     description: 'The short ID of the run.'
 
 branding:
