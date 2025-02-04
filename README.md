@@ -19,6 +19,7 @@ jobs:
         with:
           project_id: 'your-project-id'
           api_token: ${{ secrets.QATECH_API_TOKEN }}
+          blocking: true
           test_plan_short_ids: 'jgbinp,j1kn1,ocjmd' # Optional, comma-separated list of test plan short IDs
 ```
 
@@ -30,6 +31,7 @@ jobs:
 | `api_token` | QA.tech API token | Yes | - |
 | `api_url` | Custom API URL if needed | No | <https://app.qa.tech> |
 | `test_plan_short_ids` | Comma-separated list of test plan IDs to run | No | - |
+| `blocking` | Wait for test results before completing the workflow | No | false |
 
 You can find your project ID and generate an API token in your [QA.tech project settings](https://app.qa.tech/dashboard/current-project/settings/integrations).
 
@@ -37,11 +39,20 @@ You can find your project ID and generate an API token in your [QA.tech project 
 
 | Output | Description |
 |--------|-------------|
-| `runId` | The ID of the created test run |
-| `runShortId` | A short ID for the test run |
-| `success` | Boolean indicating if the run was successful |
+| `run_created` | Whether the test run was created successfully on QA.tech |
+| `run_short_id` | The short ID of the run. |
+| `run_result` | The test execution result. Only set when blocking is true. |
+| `run_status` | The final status of the run. Only set when blocking is true. |
 
-## Test Plans
+### Blocking mode
+
+When `blocking`is set to `true, the action will:
+
+- Wait for all tests to complete execution
+- Report the final test results before proceeding
+- Fail the workflow step if any tests fail
+
+### Test Plans
 
 You can specify which test plans to run by providing their IDs in the `test_plan_short_ids` input. Multiple test plans should be separated by commas. For example:
 
