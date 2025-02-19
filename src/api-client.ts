@@ -13,7 +13,7 @@ export interface Payload {
 	branch: string;
 	commitHash: string;
 	repository: string;
-	testPlanShortIds?: string[];
+	testPlanShortId?: string;
 }
 
 export interface ApiResponse {

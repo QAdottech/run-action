@@ -36,7 +36,7 @@ describe("GitHub Action", () => {
 					return "test-token-12345";
 				case "api_url":
 					return "";
-				case "test_plan_short_ids":
+				case "test_plan_short_id":
 					return "";
 				default:
 					return "";
@@ -92,11 +92,11 @@ describe("GitHub Action", () => {
 	});
 
 	it("should successfully start a run with test plans", async () => {
-		const testPlans = "plan1,plan2, plan3";
+		const testPlan = "plan1";
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
-				case "test_plan_short_ids":
-					return testPlans;
+				case "test_plan_short_id":
+					return testPlan;
 				case "project_id":
 					return "test-project";
 				case "api_token":
@@ -122,7 +122,7 @@ describe("GitHub Action", () => {
 			"https://app.qa.tech/api/projects/test-project/runs",
 			"test-token-12345",
 			expect.objectContaining({
-				testPlanShortIds: ["plan1", "plan2", "plan3"],
+				testPlanShortId: "plan1",
 			}),
 		);
 	});
@@ -164,7 +164,7 @@ describe("GitHub Action", () => {
 			expect.any(String),
 			expect.any(String),
 			expect.not.objectContaining({
-				testPlanShortIds: expect.anything(),
+				testPlanShortId: expect.anything(),
 			}),
 		);
 	});
@@ -172,8 +172,8 @@ describe("GitHub Action", () => {
 	it("should handle malformed test plan IDs", async () => {
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
-				case "test_plan_short_ids":
-					return ",,test1,,test2,,";
+				case "test_plan_short_id":
+					return "test1 ";
 				case "project_id":
 					return "test-project";
 				case "api_token":
@@ -199,11 +199,78 @@ describe("GitHub Action", () => {
 			expect.any(String),
 			expect.any(String),
 			expect.objectContaining({
-				testPlanShortIds: ["test1", "test2"],
+				testPlanShortId: "test1",
 			}),
 		);
 	});
+	it("should properly trim whitespace from test plan ID", async () => {
+		vi.mocked(core.getInput).mockImplementation((name) => {
+			switch (name) {
+				case "test_plan_short_id":
+					return "  test-plan-123  ";
+				case "project_id":
+					return "test-project";
+				case "api_token":
+					return "test-token-12345";
+				default:
+					return "";
+			}
+		});
 
+		const mockRunResponse = {
+			run: {
+				id: "test-id",
+				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+			},
+		};
+
+		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
+
+		await run();
+
+		expect(triggerQATechRun).toHaveBeenCalledWith(
+			expect.any(String),
+			expect.any(String),
+			expect.objectContaining({
+				testPlanShortId: "test-plan-123",
+			}),
+		);
+	});
+	it("should handle empty test plan ID string", async () => {
+		vi.mocked(core.getInput).mockImplementation((name) => {
+			switch (name) {
+				case "test_plan_short_id":
+					return "   "; // Just whitespace
+				case "project_id":
+					return "test-project";
+				case "api_token":
+					return "test-token-12345";
+				default:
+					return "";
+			}
+		});
+
+		const mockRunResponse = {
+			run: {
+				id: "test-id",
+				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+			},
+		};
+
+		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
+
+		await run();
+
+		expect(triggerQATechRun).toHaveBeenCalledWith(
+			expect.any(String),
+			expect.any(String),
+			expect.not.objectContaining({
+				testPlanShortId: expect.anything(),
+			}),
+		);
+	});
 	it("should handle HTTP 400 error", async () => {
 		const errorResponse = new Error("HTTP error! status: 400 - Bad Request");
 		vi.mocked(triggerQATechRun).mockRejectedValueOnce(errorResponse);
