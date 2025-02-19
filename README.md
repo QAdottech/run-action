@@ -29,7 +29,7 @@ jobs:
 | `project_id` | Your QA.tech project ID | Yes | - |
 | `api_token` | QA.tech API token | Yes | - |
 | `api_url` | Custom API URL if needed | No | <https://app.qa.tech> |
-| `test_plan_short_id` | Test plan ID to run | No | - |
+| `test_plan_short_id` | Test plan short ID to run | No | - |
 
 You can find your project ID and generate an API token in your [QA.tech project settings](https://app.qa.tech/dashboard/current-project/settings/integrations).
 
