@@ -39352,13 +39352,10 @@ const validateUrl = (url) => {
     }
 };
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const parseTestPlanShortIds = (input) => {
+const parseTestPlanShortId = (input) => {
     if (!input)
-        return [];
-    return input
-        .split(",")
-        .map((id) => id.trim())
-        .filter(Boolean);
+        return "";
+    return input.trim();
 };
 const getStartRunUrl = (baseUrl, projectId) => `${baseUrl}/api/projects/${projectId}/runs`;
 async function run() {
@@ -39373,7 +39370,7 @@ async function run() {
         }
         const projectId = core.getInput("project_id", { required: true });
         const apiToken = core.getInput("api_token", { required: true });
-        const testPlanShortIds = parseTestPlanShortIds(core.getInput("test_plan_short_ids"));
+        const testPlanShortId = parseTestPlanShortId(core.getInput("test_plan_short_id"));
         if (!projectId) {
             core.setFailed('The "project_id" input is required');
             return;
@@ -39391,9 +39388,9 @@ async function run() {
             commitHash: sha,
             repository: repo.repo,
         };
-        if (testPlanShortIds.length > 0) {
-            core.debug(`Including test plans: ${testPlanShortIds.join(", ")}`);
-            payload.testPlanShortIds = testPlanShortIds;
+        if (testPlanShortId) {
+            core.debug(`Including test plan: ${testPlanShortId}`);
+            payload.testPlanShortId = testPlanShortId;
         }
         core.debug(`Triggering QA.tech run with payload: ${JSON.stringify(payload)}`);
         const result = await triggerQATechRun(apiUrl, apiToken, payload);
