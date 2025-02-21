@@ -12,8 +12,8 @@ inputs:
   api_url:
     description: 'The API url for QA.techs API. Defaults to production.'
     required: false
-  test_plan_short_ids:
-    description: 'The test plan IDs to run the tests in.'
+  test_plan_short_id:
+    description: 'The unique identifier (test plan short ID) for a single test plan to execute.'
     required: false
   blocking:
     description: 'Whether the run should be blocking.'
