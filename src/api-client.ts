@@ -5,6 +5,11 @@ export interface RunDetails {
 	id: string;
 	shortId: string;
 	url: string;
+	testCount: number;
+	testPlan: {
+		name: string;
+		short_id: string;
+	} | null;
 }
 
 export interface Payload {

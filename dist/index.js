@@ -39397,7 +39397,9 @@ async function run() {
         if (result.run) {
             core.setOutput("run_created", "true");
             core.setOutput("run_short_id", result.run.shortId);
-            core.info(`QA.tech run started with ID: ${result.run.id}, Short ID: ${result.run.shortId}`);
+            core.info(`QA.tech run started with ID: ${result.run.shortId}${result.run.testPlan
+                ? `, Test Plan: ${result.run.testPlan.name} with ID: ${result.run.testPlan.short_id}`
+                : ""}`);
             core.info(`View run at: ${result.run.url}`);
             if (blocking) {
                 core.info(`Waiting for test results... (${result.run.url})`);
