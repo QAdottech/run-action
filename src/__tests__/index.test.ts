@@ -50,6 +50,8 @@ describe("GitHub Action", () => {
 				id: "test-id",
 				shortId: "short-id",
 				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 10,
+				testPlan: null,
 			},
 		};
 
@@ -111,6 +113,11 @@ describe("GitHub Action", () => {
 				id: "test-id",
 				shortId: "short-id",
 				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 10,
+				testPlan: {
+					name: "My test plan",
+					short_id: "testPlan",
+				},
 			},
 		};
 
@@ -153,6 +160,8 @@ describe("GitHub Action", () => {
 				id: "test-id",
 				shortId: "short-id",
 				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 10,
+				testPlan: null,
 			},
 		};
 
@@ -188,6 +197,11 @@ describe("GitHub Action", () => {
 				id: "test-id",
 				shortId: "short-id",
 				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 10,
+				testPlan: {
+					name: "Test 1",
+					short_id: "test1",
+				},
 			},
 		};
 
@@ -222,6 +236,11 @@ describe("GitHub Action", () => {
 				id: "test-id",
 				shortId: "short-id",
 				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 10,
+				testPlan: {
+					name: "Test plan 123",
+					short_id: "test-plan-123",
+				},
 			},
 		};
 
@@ -256,6 +275,8 @@ describe("GitHub Action", () => {
 				id: "test-id",
 				shortId: "short-id",
 				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 1,
+				testPlan: null,
 			},
 		};
 
@@ -351,6 +372,8 @@ describe("GitHub Action", () => {
 				id: "test-id",
 				shortId: "short-id",
 				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 10,
+				testPlan: null,
 			},
 		};
 		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
@@ -374,6 +397,8 @@ describe("GitHub Action", () => {
 				id: "test-id",
 				shortId: "short-id",
 				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 10,
+				testPlan: null,
 			},
 		};
 
@@ -389,6 +414,7 @@ describe("GitHub Action", () => {
 
 		await run();
 
+		expect(core.info).toHaveBeenCalledWith("QA.tech run started: short-id");
 		expect(core.setOutput).toHaveBeenCalledWith("run_created", "true");
 		expect(core.setOutput).toHaveBeenCalledWith("run_short_id", "short-id");
 		expect(core.setOutput).toHaveBeenCalledWith("run_status", "COMPLETED");
@@ -411,6 +437,8 @@ describe("GitHub Action", () => {
 				id: "test-id",
 				shortId: "short-id",
 				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 10,
+				testPlan: null,
 			},
 		};
 
@@ -435,6 +463,49 @@ describe("GitHub Action", () => {
 		);
 	});
 
+	it("should handle blocking mode with test plan information", async () => {
+		vi.mocked(core.getBooleanInput).mockImplementation((name) => {
+			return name === "blocking";
+		});
+
+		const mockRunResponse = {
+			run: {
+				id: "test-id",
+				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 10,
+				testPlan: {
+					name: "Test Plan Name",
+					short_id: "test-plan-123",
+				},
+			},
+		};
+
+		const mockStatusResponse = {
+			id: "test-id",
+			short_id: "short-id",
+			status: "COMPLETED" as const,
+			result: "PASSED" as const,
+		};
+
+		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
+		vi.mocked(getRunStatus).mockResolvedValueOnce(mockStatusResponse);
+
+		await run();
+
+		expect(core.info).toHaveBeenCalledWith(
+			"QA.tech run started: short-id, Test Plan: test-plan-123",
+		);
+		expect(core.info).toHaveBeenCalledWith(
+			expect.stringContaining("Test run completed successfully"),
+		);
+		expect(core.setOutput).toHaveBeenCalledWith("run_created", "true");
+		expect(core.setOutput).toHaveBeenCalledWith("run_short_id", "short-id");
+		expect(core.setOutput).toHaveBeenCalledWith("run_status", "COMPLETED");
+		expect(core.setOutput).toHaveBeenCalledWith("run_result", "PASSED");
+		expect(core.setFailed).not.toHaveBeenCalled();
+	});
+
 	it("should poll status updates in blocking mode until completion", async () => {
 		vi.useFakeTimers();
 
@@ -447,6 +518,8 @@ describe("GitHub Action", () => {
 				id: "test-id",
 				shortId: "short-id",
 				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 10,
+				testPlan: null,
 			},
 		};
 
