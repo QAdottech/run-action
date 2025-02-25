@@ -77,9 +77,9 @@ export async function run(): Promise<void> {
 			core.setOutput("run_created", "true");
 			core.setOutput("run_short_id", result.run.shortId);
 			core.info(
-				`QA.tech run started: ${result.run.shortId}${
+				`QA.tech run started with ID: ${result.run.shortId}${
 					result.run.testPlan
-						? `, Test Plan: ${result.run.testPlan.short_id}`
+						? `, Test Plan: ${result.run.testPlan.name} with ID: ${result.run.testPlan.short_id}`
 						: ""
 				}`,
 			);

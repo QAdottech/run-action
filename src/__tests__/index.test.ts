@@ -414,7 +414,9 @@ describe("GitHub Action", () => {
 
 		await run();
 
-		expect(core.info).toHaveBeenCalledWith("QA.tech run started: short-id");
+		expect(core.info).toHaveBeenCalledWith(
+			"QA.tech run started with ID: short-id",
+		);
 		expect(core.setOutput).toHaveBeenCalledWith("run_created", "true");
 		expect(core.setOutput).toHaveBeenCalledWith("run_short_id", "short-id");
 		expect(core.setOutput).toHaveBeenCalledWith("run_status", "COMPLETED");
@@ -494,7 +496,7 @@ describe("GitHub Action", () => {
 		await run();
 
 		expect(core.info).toHaveBeenCalledWith(
-			"QA.tech run started: short-id, Test Plan: test-plan-123",
+			"QA.tech run started with ID: short-id, Test Plan: Test Plan Name with ID: test-plan-123",
 		);
 		expect(core.info).toHaveBeenCalledWith(
 			expect.stringContaining("Test run completed successfully"),
