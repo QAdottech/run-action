@@ -59,7 +59,7 @@ export async function run(): Promise<void> {
 			actor,
 			branch: ref,
 			commitHash: sha,
-			repository: repo.repo,
+			repository: `${repo.owner}/${repo.repo}`,
 		};
 
 		if (testPlanShortId) {

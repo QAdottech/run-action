@@ -13,6 +13,6 @@
 		"noEmit": true,
 		"allowJs": false
 	},
-	"include": ["src/**/*"],
+	"include": ["src/**/*", "src/__tests__/**/*"],
 	"exclude": ["dist/**/*", "node_modules"]
 }

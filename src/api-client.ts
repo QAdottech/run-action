@@ -17,7 +17,7 @@ export interface Payload {
 	actor: string;
 	branch: string;
 	commitHash: string;
-	repository: string;
+	repository: `${string}/${string}`;
 	testPlanShortId?: string;
 }
 
