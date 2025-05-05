@@ -19,7 +19,7 @@ jobs:
         with:
           project_id: 'your-project-id'
           api_token: ${{ secrets.QATECH_API_TOKEN }}
-          test_plan_short_id: 'jgbinp' # Optional, test plan short ID
+          test_plan_short_id: 'jgbinp'
 ```
 
 ## Inputs
