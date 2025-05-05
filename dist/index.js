@@ -39386,7 +39386,7 @@ async function run() {
             actor,
             branch: ref,
             commitHash: sha,
-            repository: repo.repo,
+            repository: `${repo.owner}/${repo.repo}`,
         };
         if (testPlanShortId) {
             core.debug(`Including test plan: ${testPlanShortId}`);

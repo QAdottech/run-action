@@ -67,7 +67,7 @@ describe("GitHub Action", () => {
 				actor: "testUser",
 				branch: "refs/heads/main",
 				commitHash: "abc123",
-				repository: "test-repo",
+				repository: "test-owner/test-repo",
 			},
 		);
 		expect(core.setOutput).toHaveBeenCalledWith("run_created", "true");
