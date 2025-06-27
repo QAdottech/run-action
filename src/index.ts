@@ -41,6 +41,34 @@ export async function run(): Promise<void> {
 			core.getInput("test_plan_short_id"),
 		);
 
+		const applicationsInput = core.getInput("applications");
+		let applications:
+			| Record<string, { environment: { url: string; name: string } }>
+			| undefined;
+
+		if (applicationsInput) {
+			try {
+				const parsed = JSON.parse(applicationsInput);
+				// Only accept wrapped format with "applications" property
+				if (parsed.applications) {
+					applications = parsed.applications;
+					core.debug(`Parsed applications: ${JSON.stringify(applications)}`);
+				} else {
+					core.setFailed(
+						'Applications input must contain an "applications" property at the root level',
+					);
+					return;
+				}
+			} catch (error) {
+				core.setFailed(
+					`Invalid JSON format for applications input: ${
+						error instanceof Error ? error.message : "Unknown error"
+					}`,
+				);
+				return;
+			}
+		}
+
 		if (!projectId) {
 			core.setFailed('The "project_id" input is required');
 			return;
@@ -65,6 +93,15 @@ export async function run(): Promise<void> {
 		if (testPlanShortId) {
 			core.debug(`Including test plan: ${testPlanShortId}`);
 			payload.testPlanShortId = testPlanShortId;
+		}
+
+		if (applications) {
+			core.debug(
+				`Including application overrides for ${
+					Object.keys(applications).length
+				} applications`,
+			);
+			payload.applications = applications;
 		}
 
 		core.debug(

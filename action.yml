@@ -19,6 +19,9 @@ inputs:
     description: 'Whether the run should be blocking.'
     required: false
     default: 'false'
+  applications:
+    description: 'JSON string containing application environment overrides. Format: {"applications": {"appId": {"environment": {"url": "...", "name": "..."}}}}'
+    required: false
 
 outputs:
   run_created:
