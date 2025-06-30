@@ -41,9 +41,9 @@ export async function run(): Promise<void> {
 			core.getInput("test_plan_short_id"),
 		);
 
-		const applicationsInput = core.getInput("applications");
+		const applicationsInput = core.getInput("applications_config");
 		let applications:
-			| Record<string, { environment: { url: string; name: string } }>
+			| Record<string, { environment: { url: string; name?: string } }>
 			| undefined;
 
 		if (applicationsInput) {
@@ -55,13 +55,13 @@ export async function run(): Promise<void> {
 					core.debug(`Parsed applications: ${JSON.stringify(applications)}`);
 				} else {
 					core.setFailed(
-						'Applications input must contain an "applications" property at the root level',
+						'Applications config input must contain an "applications" property at the root level',
 					);
 					return;
 				}
 			} catch (error) {
 				core.setFailed(
-					`Invalid JSON format for applications input: ${
+					`Invalid JSON format for applications config input: ${
 						error instanceof Error ? error.message : "Unknown error"
 					}`,
 				);

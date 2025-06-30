@@ -24,7 +24,7 @@ export interface Payload {
 		{
 			environment: {
 				url: string;
-				name: string;
+				name?: string;
 			};
 		}
 	>;

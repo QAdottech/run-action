@@ -42,6 +42,11 @@ describe("GitHub Action", () => {
 					return "";
 			}
 		});
+
+		// Default core.getBooleanInput mock implementation
+		vi.mocked(core.getBooleanInput).mockImplementation((name) => {
+			return name === "blocking" ? false : false;
+		});
 	});
 
 	it("should successfully start a run and set run outputs", async () => {
@@ -561,5 +566,133 @@ describe("GitHub Action", () => {
 		);
 
 		vi.useRealTimers();
+	});
+
+	it("should handle applications with only url field", async () => {
+		const applicationsJson = JSON.stringify({
+			applications: {
+				ONdgMD: {
+					environment: {
+						url: "https://app.bugduck.tech?release=test1233",
+					},
+				},
+			},
+		});
+
+		vi.mocked(core.getInput).mockImplementation((name) => {
+			switch (name) {
+				case "applications_config":
+					return applicationsJson;
+				case "project_id":
+					return "test-project";
+				case "api_token":
+					return "test-token-12345";
+				case "api_url":
+					return "";
+				case "test_plan_short_id":
+					return "";
+				default:
+					return "";
+			}
+		});
+
+		vi.mocked(core.getBooleanInput).mockImplementation((name) => {
+			return name === "blocking" ? false : false;
+		});
+
+		const mockRunResponse = {
+			run: {
+				id: "test-id",
+				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 10,
+				testPlan: null,
+			},
+		};
+
+		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
+
+		await run();
+
+		expect(triggerQATechRun).toHaveBeenCalledWith(
+			"https://app.qa.tech/api/projects/test-project/runs",
+			"test-token-12345",
+			expect.objectContaining({
+				applications: {
+					ONdgMD: {
+						environment: {
+							url: "https://app.bugduck.tech?release=test1233",
+						},
+					},
+				},
+			}),
+		);
+		expect(core.setOutput).toHaveBeenCalledWith("run_created", "true");
+		expect(core.setFailed).not.toHaveBeenCalled();
+	});
+
+	it("should handle applications with both url and name fields", async () => {
+		const applicationsJson = JSON.stringify({
+			applications: {
+				ONdgMD: {
+					environment: {
+						url: "https://app.bugduck.tech?release=test1233",
+						name: "test1233",
+					},
+				},
+			},
+		});
+
+		vi.mocked(core.getInput).mockImplementation((name) => {
+			switch (name) {
+				case "applications_config":
+					return applicationsJson;
+				case "project_id":
+					return "test-project";
+				case "api_token":
+					return "test-token-12345";
+				case "api_url":
+					return "";
+				case "test_plan_short_id":
+					return "";
+				default:
+					return "";
+			}
+		});
+
+		vi.mocked(core.getBooleanInput).mockImplementation((name) => {
+			return name === "blocking" ? false : false;
+		});
+
+		const mockRunResponse = {
+			run: {
+				id: "test-id",
+				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 10,
+				testPlan: null,
+			},
+		};
+
+		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
+
+		await run();
+
+		expect(triggerQATechRun).toHaveBeenCalledWith(
+			"https://app.qa.tech/api/projects/test-project/runs",
+			"test-token-12345",
+			expect.objectContaining({
+				applications: {
+					ONdgMD: {
+						environment: {
+							url: "https://app.bugduck.tech?release=test1233",
+							name: "test1233",
+						},
+					},
+				},
+			}),
+		);
+		expect(core.setOutput).toHaveBeenCalledWith("run_created", "true");
+		expect(core.setFailed).not.toHaveBeenCalled();
 	});
 });

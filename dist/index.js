@@ -39371,6 +39371,26 @@ async function run() {
         const projectId = core.getInput("project_id", { required: true });
         const apiToken = core.getInput("api_token", { required: true });
         const testPlanShortId = parseTestPlanShortId(core.getInput("test_plan_short_id"));
+        const applicationsInput = core.getInput("applications_config");
+        let applications;
+        if (applicationsInput) {
+            try {
+                const parsed = JSON.parse(applicationsInput);
+                // Only accept wrapped format with "applications" property
+                if (parsed.applications) {
+                    applications = parsed.applications;
+                    core.debug(`Parsed applications: ${JSON.stringify(applications)}`);
+                }
+                else {
+                    core.setFailed('Applications config input must contain an "applications" property at the root level');
+                    return;
+                }
+            }
+            catch (error) {
+                core.setFailed(`Invalid JSON format for applications config input: ${error instanceof Error ? error.message : "Unknown error"}`);
+                return;
+            }
+        }
         if (!projectId) {
             core.setFailed('The "project_id" input is required');
             return;
@@ -39391,6 +39411,10 @@ async function run() {
         if (testPlanShortId) {
             core.debug(`Including test plan: ${testPlanShortId}`);
             payload.testPlanShortId = testPlanShortId;
+        }
+        if (applications) {
+            core.debug(`Including application overrides for ${Object.keys(applications).length} applications`);
+            payload.applications = applications;
         }
         core.debug(`Triggering QA.tech run with payload: ${JSON.stringify(payload)}`);
         const result = await triggerQATechRun(apiUrl, apiToken, payload);

@@ -31,7 +31,7 @@ jobs:
 | `api_url` | Custom API URL if needed | No | <https://app.qa.tech> |
 | `test_plan_short_id` | Test plan short ID to run | No | - |
 | `blocking` | Enables blocking mode to wait for the test run to complete | No | false |
-| `applications` | JSON string containing application environment overrides | No | - |
+| `applications_config` | JSON string containing application environment overrides | No | - |
 
 You can find your project ID and generate an API token in your [QA.tech project settings](https://app.qa.tech/dashboard/current-project/settings/integrations).
 
@@ -83,7 +83,7 @@ When blocking is enabled, the action provides additional outputs:
 
 ## Application Environment Overrides
 
-You can override application environments for specific runs using the `applications` input. This is useful for testing against preview deployments or specific environment URLs.
+You can override application environments for specific runs using the `applications_config` input. This is useful for testing against preview deployments or specific environment URLs.
 
 The input expects a JSON string with the following format:
 
@@ -108,7 +108,7 @@ The input expects a JSON string with the following format:
     project_id: 'your-project-id'
     api_token: ${{ secrets.QATECH_API_TOKEN }}
     test_plan_short_id: 'jgbinp'
-    applications: |
+    applications_config: |
       {
         "applications": {
           "short-id-1": {
@@ -122,10 +122,10 @@ The input expects a JSON string with the following format:
 
 You can override multiple applications in a single run:
 
-> **Note**: Check your QA.tech UI under Test Plans → API Integration to see which applications are connected to your test plan.
+> **Note**: Check on app.qa.tech under Test Plans → API Integration to see which applications are connected to your test plan.
 
 ```yaml
-applications: |
+applications_config: |
   {
     "applications": {
       "short-id-2": {
