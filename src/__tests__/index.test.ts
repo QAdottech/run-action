@@ -44,8 +44,8 @@ describe("GitHub Action", () => {
 		});
 
 		// Default core.getBooleanInput mock implementation
-		vi.mocked(core.getBooleanInput).mockImplementation((name) => {
-			return name === "blocking" ? false : false;
+		vi.mocked(core.getBooleanInput).mockImplementation(() => {
+			return false;
 		});
 	});
 
@@ -596,8 +596,8 @@ describe("GitHub Action", () => {
 			}
 		});
 
-		vi.mocked(core.getBooleanInput).mockImplementation((name) => {
-			return name === "blocking" ? false : false;
+		vi.mocked(core.getBooleanInput).mockImplementation(() => {
+			return false;
 		});
 
 		const mockRunResponse = {
@@ -660,8 +660,8 @@ describe("GitHub Action", () => {
 			}
 		});
 
-		vi.mocked(core.getBooleanInput).mockImplementation((name) => {
-			return name === "blocking" ? false : false;
+		vi.mocked(core.getBooleanInput).mockImplementation(() => {
+			return false;
 		});
 
 		const mockRunResponse = {
