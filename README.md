@@ -39,9 +39,11 @@ You can find your project ID and generate an API token in your [QA.tech project 
 
 | Output | Description |
 |--------|-------------|
-| `runId` | The ID of the created test run |
-| `runShortId` | A short ID for the test run |
-| `success` | Boolean indicating if the run was successful |
+| `run_created` | Whether the test run was created successfully on QA.tech |
+| `run_status` | The final status of the run (INITIATED, RUNNING, COMPLETED, ERROR, or CANCELLED). Only set when blocking is true |
+| `run_result` | The test execution result (PASSED, FAILED, or SKIPPED). Only set when blocking is true |
+| `run_short_id` | The short ID of the run |
+| `run_url` | The URL of the run |
 
 ## Test Plan
 
