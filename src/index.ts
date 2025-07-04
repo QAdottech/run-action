@@ -113,6 +113,7 @@ export async function run(): Promise<void> {
 		if (result.run) {
 			core.setOutput("run_created", "true");
 			core.setOutput("run_short_id", result.run.shortId);
+			core.setOutput("run_url", result.run.url);
 			core.info(
 				`QA.tech run started with ID: ${result.run.shortId}${
 					result.run.testPlan

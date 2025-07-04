@@ -32,6 +32,8 @@ outputs:
     description: 'The test execution result (PASSED, FAILED, or SKIPPED). Only set when blocking is true.'
   run_short_id:
     description: 'The short ID of the run.'
+  run_url:
+    description: 'The URL of the run.'
 
 branding:
   icon: 'user-check'
