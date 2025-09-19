@@ -1,6 +1,11 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import { type Payload, getRunStatus, triggerQATechRun } from "./api-client";
+import {
+	type Payload,
+	getRunStatus,
+	triggerQATechRun,
+	postGitHubPRComment,
+} from "./api-client";
 
 const BASE_URL = "https://app.qa.tech";
 const POLLING_INTERVAL = 20000; // 20 seconds in milliseconds
@@ -41,6 +46,11 @@ export async function run(): Promise<void> {
 			core.getInput("test_plan_short_id"),
 		);
 
+		// Exploratory testing inputs
+		const exploratoryUrl = core.getInput("exploratory_url");
+		const exploratoryPrompt = core.getInput("exploratory_prompt");
+		const githubPrNumber = core.getInput("github_pr_number");
+
 		const applicationsInput = core.getInput("applications_config");
 		let applications:
 			| Record<string, { environment: { url: string; name?: string } }>
@@ -79,6 +89,27 @@ export async function run(): Promise<void> {
 			return;
 		}
 
+		// Validate exploratory testing inputs
+		const isExploratoryMode = exploratoryUrl || exploratoryPrompt;
+		if (isExploratoryMode) {
+			if (!exploratoryUrl) {
+				core.setFailed(
+					'The "exploratory_url" input is required when using exploratory testing',
+				);
+				return;
+			}
+			if (!exploratoryPrompt) {
+				core.setFailed(
+					'The "exploratory_prompt" input is required when using exploratory testing',
+				);
+				return;
+			}
+			if (!validateUrl(exploratoryUrl)) {
+				core.setFailed(`Invalid exploratory URL: ${exploratoryUrl}`);
+				return;
+			}
+		}
+
 		const apiUrl = getStartRunUrl(baseApiUrl, projectId);
 		const { actor, ref, sha, repo } = github.context;
 
@@ -102,6 +133,14 @@ export async function run(): Promise<void> {
 				} applications`,
 			);
 			payload.applications = applications;
+		}
+
+		// Add exploratory testing parameters
+		if (isExploratoryMode) {
+			core.debug(`Including exploratory testing parameters`);
+			payload.integrationName = "GitHub Action";
+			payload.exploratoryUrl = exploratoryUrl;
+			payload.exploratoryPrompt = exploratoryPrompt;
 		}
 
 		core.debug(
@@ -141,6 +180,48 @@ export async function run(): Promise<void> {
 					if (status.status === "COMPLETED") {
 						core.setOutput("run_status", status.status);
 						core.setOutput("run_result", status.result);
+
+						// Post comment on GitHub PR if specified and in exploratory mode
+						if (isExploratoryMode && githubPrNumber) {
+							try {
+								const prNumber = parseInt(githubPrNumber, 10);
+								if (isNaN(prNumber)) {
+									core.warning(`Invalid PR number: ${githubPrNumber}`);
+								} else {
+									const githubToken =
+										core.getInput("github_token") || process.env.GITHUB_TOKEN;
+									if (!githubToken) {
+										core.warning(
+											"GitHub token not available for posting PR comment",
+										);
+									} else {
+										const comment = `## 🔍 Exploratory Testing Results
+
+**Status:** ${status.result}
+**Test URL:** ${exploratoryUrl}
+**Prompt:** ${exploratoryPrompt}
+
+**Results:** [View detailed results](${result.run.url})
+
+${
+	status.result === "FAILED"
+		? "❌ Tests failed - please review the results"
+		: status.result === "PASSED"
+		? "✅ Tests passed successfully"
+		: "⚠️ Tests were skipped"
+}`;
+
+										await postGitHubPRComment(githubToken, prNumber, comment);
+									}
+								}
+							} catch (error) {
+								core.warning(
+									`Failed to post PR comment: ${
+										error instanceof Error ? error.message : "Unknown error"
+									}`,
+								);
+							}
+						}
 
 						if (status.result === "FAILED") {
 							core.setFailed(

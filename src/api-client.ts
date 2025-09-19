@@ -1,4 +1,5 @@
 import * as core from "@actions/core";
+import * as github from "@actions/github";
 import fetch from "node-fetch";
 
 export interface RunDetails {
@@ -28,6 +29,9 @@ export interface Payload {
 			};
 		}
 	>;
+	integrationName?: string;
+	exploratoryUrl?: string;
+	exploratoryPrompt?: string;
 }
 
 export interface ApiResponse {
@@ -103,6 +107,33 @@ export const getRunStatus = async (
 			core.error(`Error getting run status: ${error.message}`);
 		} else {
 			core.error("An unknown error occurred getting run status");
+		}
+		throw error;
+	}
+};
+
+export const postGitHubPRComment = async (
+	githubToken: string,
+	prNumber: number,
+	comment: string,
+): Promise<void> => {
+	try {
+		const octokit = github.getOctokit(githubToken);
+		const { owner, repo } = github.context.repo;
+
+		await octokit.rest.issues.createComment({
+			owner,
+			repo,
+			issue_number: prNumber,
+			body: comment,
+		});
+
+		core.info(`Posted comment on PR #${prNumber}`);
+	} catch (error) {
+		if (error instanceof Error) {
+			core.error(`Error posting GitHub PR comment: ${error.message}`);
+		} else {
+			core.error("An unknown error occurred posting GitHub PR comment");
 		}
 		throw error;
 	}
