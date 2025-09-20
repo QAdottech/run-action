@@ -24,18 +24,17 @@ jobs:
 
 ## Inputs
 
-| Input                 | Description                                                                           | Required | Default               |
-| --------------------- | ------------------------------------------------------------------------------------- | -------- | --------------------- |
-| `project_id`          | Your QA.tech project ID                                                               | Yes      | -                     |
-| `api_token`           | QA.tech API token                                                                     | Yes      | -                     |
-| `api_url`             | Custom API URL if needed                                                              | No       | <https://app.qa.tech> |
-| `test_plan_short_id`  | Test plan short ID to run                                                             | No       | -                     |
-| `blocking`            | Enables blocking mode to wait for the test run to complete                            | No       | false                 |
-| `applications_config` | JSON string containing application environment overrides                              | No       | -                     |
-| `exploratory_url`     | URL to start exploratory testing on. When provided, triggers exploratory testing mode | No       | -                     |
-| `exploratory_prompt`  | Prompt describing what to test during exploratory testing                             | No       | -                     |
-| `github_pr_number`    | GitHub PR number to comment on once exploratory testing is complete                   | No       | -                     |
-| `github_token`        | GitHub token for posting PR comments. Defaults to GITHUB_TOKEN environment variable   | No       | -                     |
+| Input                  | Description                                                | Required | Default               |
+| ---------------------- | ---------------------------------------------------------- | -------- | --------------------- |
+| `project_id`           | Your QA.tech project ID                                    | Yes      | -                     |
+| `api_token`            | QA.tech API token                                          | Yes      | -                     |
+| `api_url`              | Custom API URL if needed                                   | No       | <https://app.qa.tech> |
+| `test_plan_short_id`   | Test plan short ID to run                                  | No       | -                     |
+| `blocking`             | Enables blocking mode to wait for the test run to complete | No       | false                 |
+| `applications_config`  | JSON string containing application environment overrides   | No       | -                     |
+| `exploratory`          | Enable exploratory testing mode using AI agents            | No       | false                 |
+| `exploratory_prompt`   | Prompt describing what to test during exploratory testing  | No       | -                     |
+| `notifications_config` | JSON string containing notification settings               | No       | -                     |
 
 You can find your project ID and generate an API token in your [QA.tech project settings](https://app.qa.tech/dashboard/current-project/settings/integrations).
 
@@ -156,12 +155,12 @@ The action supports exploratory testing using QA.tech's AI agents. This allows y
 
 ### How it Works
 
-When you provide both `exploratory_url` and `exploratory_prompt`, the action will:
+When you enable `exploratory: true` and provide an `exploratory_prompt`, the action will:
 
 1. Trigger an exploratory test run on QA.tech
-2. The AI agent will navigate to the specified URL
+2. The AI agent will navigate to the URL specified in `applications_config`
 3. Follow the instructions in your prompt to test the application
-4. Optionally post results as a comment on a GitHub PR
+4. Optionally send notifications based on your `notifications_config`
 
 ### Basic Exploratory Testing
 
@@ -170,46 +169,168 @@ When you provide both `exploratory_url` and `exploratory_prompt`, the action wil
   with:
     project_id: "your-project-id"
     api_token: ${{ secrets.QATECH_API_TOKEN }}
-    exploratory_url: "https://your-app.com"
-    exploratory_prompt: "Test the login functionality with different user roles and verify the dashboard loads correctly"
+    exploratory: true
+    exploratory_prompt: "Test the following changes: service: api-auth: refactor verification email flow"
+    applications_config: |
+      {
+        "applications": {
+          "frontend-app-id": {
+            "environment": {
+              "url": "https://your-app.com",
+              "name": "Test Environment"
+            }
+          }
+        }
+      }
     blocking: true
 ```
 
-### Exploratory Testing with PR Comments
+### Exploratory Testing with Notifications
 
-To automatically post test results to a GitHub PR:
+To automatically send notifications when tests complete:
 
 ```yaml
 - uses: QAdottech/run-action@v2
   with:
     project_id: "your-project-id"
     api_token: ${{ secrets.QATECH_API_TOKEN }}
-    exploratory_url: "https://your-app.com"
+    exploratory: true
     exploratory_prompt: "Test the checkout flow and payment processing"
-    github_pr_number: ${{ github.event.number }}
-    github_token: ${{ secrets.GITHUB_TOKEN }}
+    applications_config: |
+      {
+        "applications": {
+          "frontend-app-id": {
+            "environment": {
+              "url": "https://your-app.com",
+              "name": "Test Environment"
+            }
+          }
+        }
+      }
+    notifications_config: |
+      [
+        {
+          "type": "github-comment",
+          "pr_number": ${{ github.event.number }},
+          "send_on": ["COMPLETED"],
+          "silent_on": ["PASSED"]
+        }
+      ]
     blocking: true
+```
+
+### Complete Workflow Example
+
+Here's a complete GitHub Actions workflow that triggers exploratory testing on pull requests:
+
+```yaml
+name: Exploratory Testing
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  exploratory-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Exploratory Tests
+        uses: QAdottech/run-action@v2
+        with:
+          project_id: ${{ secrets.QATECH_PROJECT_ID }}
+          api_token: ${{ secrets.QATECH_API_TOKEN }}
+          exploratory: true
+          exploratory_prompt: |
+            Test the following changes:
+            service: api-auth: refactor verification email flow
+            service: web-frontend: add support for new email verification flow endpoints
+            service: web-frontend: list all forgotten password recovery attempts in settings
+          applications_config: |
+            {
+              "applications": {
+                "frontend-app": {
+                  "environment": {
+                    "url": "https://preview-${{ github.event.number }}-frontend.vercel.app",
+                    "name": "PR-${{ github.event.number }}-Frontend"
+                  }
+                },
+                "backend-api": {
+                  "environment": {
+                    "url": "https://preview-${{ github.event.number }}-api.vercel.app",
+                    "name": "PR-${{ github.event.number }}-API"
+                  }
+                }
+              }
+            }
+          notifications_config: |
+            [
+              {
+                "type": "github-comment",
+                "pr_number": ${{ github.event.number }},
+                "send_on": ["COMPLETED"],
+                "silent_on": ["PASSED"]
+              }
+            ]
+          blocking: true
 ```
 
 ### Example Prompts
 
 Here are some example prompts you can use for exploratory testing:
 
+- **Service Changes**: "Test the following changes: service: api-auth: refactor verification email flow"
 - **E-commerce**: "Test the product search functionality, add items to cart, and complete the checkout process"
 - **Authentication**: "Test user registration, login, password reset, and account verification flows"
 - **Dashboard**: "Navigate through all menu items, test data visualization, and verify export functionality"
 - **Forms**: "Fill out the contact form with various data combinations and test validation"
 - **Mobile**: "Test the responsive design on different screen sizes and touch interactions"
 
-### PR Comment Format
+### Notification Configuration
 
-When `github_pr_number` is provided, the action will post a formatted comment with:
+The `notifications_config` parameter allows you to configure multiple notification types:
 
-- Test status (PASSED/FAILED/SKIPPED)
-- The URL that was tested
-- The prompt that was used
-- Link to detailed results on QA.tech
-- Visual indicators (✅/❌/⚠️)
+```json
+[
+	{
+		"type": "github-comment",
+		"pr_number": 123,
+		"send_on": ["COMPLETED"],
+		"silent_on": ["PASSED"]
+	},
+	{
+		"type": "email",
+		"recipient": "team@company.com",
+		"send_on": ["FAILED"],
+		"silent_on": ["PASSED"]
+	},
+	{
+		"type": "webhook",
+		"url": "https://hooks.slack.com/services/...",
+		"send_on": ["STARTED", "COMPLETED"],
+		"silent_on": ["PASSED"]
+	}
+]
+```
+
+#### Notification Types
+
+- **`github-comment`**: Posts a comment on a GitHub PR
+  - `pr_number`: The PR number to comment on
+- **`email`**: Sends an email notification (planned)
+  - `recipient`: Email address to send to
+- **`webhook`**: Sends a webhook notification (planned)
+  - `url`: Webhook URL to send to
+
+#### Notification Triggers
+
+- **`send_on`**: Array of statuses when to send notifications
+  - `STARTED`: When the test run begins
+  - `COMPLETED`: When the test run finishes
+  - `FAILED`: When the test run fails
+- **`silent_on`**: Array of results to suppress notifications for
+  - `PASSED`: Don't notify when tests pass
+  - `FAILED`: Don't notify when tests fail
+  - `SKIPPED`: Don't notify when tests are skipped
 
 ## Development
 

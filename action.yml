@@ -22,17 +22,15 @@ inputs:
   applications_config:
     description: 'JSON string containing application environment overrides. Format: {"applications": {"appId": {"environment": {"url": "...", "name": "..."}}}}'
     required: false
-  exploratory_url:
-    description: "URL to start exploratory testing on. When provided, triggers exploratory testing mode."
+  exploratory:
+    description: "Enable exploratory testing mode using AI agents."
     required: false
+    default: "false"
   exploratory_prompt:
-    description: "Prompt describing what to test during exploratory testing."
+    description: "Prompt describing what to test during exploratory testing. Example: 'Test the following changes: service: api-auth: refactor verification email flow'"
     required: false
-  github_pr_number:
-    description: "GitHub PR number to comment on once exploratory testing is complete."
-    required: false
-  github_token:
-    description: "GitHub token for posting PR comments. Defaults to GITHUB_TOKEN environment variable."
+  notifications_config:
+    description: 'JSON string containing notification settings. Format: [{"type": "github-comment", "pr_number": 123, "send_on": ["COMPLETED"], "silent_on": ["PASSED"]}]'
     required: false
 
 outputs:

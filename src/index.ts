@@ -2,9 +2,10 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import {
 	type Payload,
+	type NotificationConfig,
 	getRunStatus,
 	triggerQATechRun,
-	postGitHubPRComment,
+	processNotifications,
 } from "./api-client";
 
 const BASE_URL = "https://app.qa.tech";
@@ -47,9 +48,9 @@ export async function run(): Promise<void> {
 		);
 
 		// Exploratory testing inputs
-		const exploratoryUrl = core.getInput("exploratory_url");
+		const exploratory = core.getBooleanInput("exploratory");
 		const exploratoryPrompt = core.getInput("exploratory_prompt");
-		const githubPrNumber = core.getInput("github_pr_number");
+		const notificationsConfigInput = core.getInput("notifications_config");
 
 		const applicationsInput = core.getInput("applications_config");
 		let applications:
@@ -79,6 +80,24 @@ export async function run(): Promise<void> {
 			}
 		}
 
+		// Parse notifications config
+		let notifications: NotificationConfig[] | undefined;
+		if (notificationsConfigInput) {
+			try {
+				notifications = JSON.parse(
+					notificationsConfigInput,
+				) as NotificationConfig[];
+				core.debug(`Parsed notifications: ${JSON.stringify(notifications)}`);
+			} catch (error) {
+				core.setFailed(
+					`Invalid JSON format for notifications config input: ${
+						error instanceof Error ? error.message : "Unknown error"
+					}`,
+				);
+				return;
+			}
+		}
+
 		if (!projectId) {
 			core.setFailed('The "project_id" input is required');
 			return;
@@ -90,22 +109,17 @@ export async function run(): Promise<void> {
 		}
 
 		// Validate exploratory testing inputs
-		const isExploratoryMode = exploratoryUrl || exploratoryPrompt;
-		if (isExploratoryMode) {
-			if (!exploratoryUrl) {
-				core.setFailed(
-					'The "exploratory_url" input is required when using exploratory testing',
-				);
-				return;
-			}
+		if (exploratory) {
 			if (!exploratoryPrompt) {
 				core.setFailed(
 					'The "exploratory_prompt" input is required when using exploratory testing',
 				);
 				return;
 			}
-			if (!validateUrl(exploratoryUrl)) {
-				core.setFailed(`Invalid exploratory URL: ${exploratoryUrl}`);
+			if (!applications) {
+				core.setFailed(
+					'The "applications_config" input is required when using exploratory testing to specify the URL to test',
+				);
 				return;
 			}
 		}
@@ -136,10 +150,10 @@ export async function run(): Promise<void> {
 		}
 
 		// Add exploratory testing parameters
-		if (isExploratoryMode) {
+		if (exploratory) {
 			core.debug(`Including exploratory testing parameters`);
 			payload.integrationName = "GitHub Action";
-			payload.exploratoryUrl = exploratoryUrl;
+			payload.exploratory = true;
 			payload.exploratoryPrompt = exploratoryPrompt;
 		}
 
@@ -181,42 +195,18 @@ export async function run(): Promise<void> {
 						core.setOutput("run_status", status.status);
 						core.setOutput("run_result", status.result);
 
-						// Post comment on GitHub PR if specified and in exploratory mode
-						if (isExploratoryMode && githubPrNumber) {
+						// Process notifications if configured
+						if (notifications) {
 							try {
-								const prNumber = parseInt(githubPrNumber, 10);
-								if (isNaN(prNumber)) {
-									core.warning(`Invalid PR number: ${githubPrNumber}`);
-								} else {
-									const githubToken =
-										core.getInput("github_token") || process.env.GITHUB_TOKEN;
-									if (!githubToken) {
-										core.warning(
-											"GitHub token not available for posting PR comment",
-										);
-									} else {
-										const comment = `## 🔍 Exploratory Testing Results
-
-**Status:** ${status.result}
-**Test URL:** ${exploratoryUrl}
-**Prompt:** ${exploratoryPrompt}
-
-**Results:** [View detailed results](${result.run.url})
-
-${
-	status.result === "FAILED"
-		? "❌ Tests failed - please review the results"
-		: status.result === "PASSED"
-		? "✅ Tests passed successfully"
-		: "⚠️ Tests were skipped"
-}`;
-
-										await postGitHubPRComment(githubToken, prNumber, comment);
-									}
-								}
+								await processNotifications(
+									notifications,
+									status,
+									result.run.url,
+									exploratoryPrompt,
+								);
 							} catch (error) {
 								core.warning(
-									`Failed to post PR comment: ${
+									`Failed to process notifications: ${
 										error instanceof Error ? error.message : "Unknown error"
 									}`,
 								);

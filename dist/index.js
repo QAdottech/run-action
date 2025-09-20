@@ -39365,6 +39365,53 @@ const postGitHubPRComment = async (githubToken, prNumber, comment) => {
         throw error;
     }
 };
+const processNotifications = async (notifications, status, runUrl, exploratoryPrompt) => {
+    for (const notification of notifications) {
+        // Check if we should send this notification based on status
+        const shouldSend = notification.send_on.includes(status.status);
+        const shouldSilent = notification.silent_on?.includes(status.result);
+        if (!shouldSend || shouldSilent) {
+            continue;
+        }
+        try {
+            switch (notification.type) {
+                case "github-comment":
+                    if (notification.pr_number) {
+                        const githubToken = process.env.GITHUB_TOKEN;
+                        if (!githubToken) {
+                            core.warning("GitHub token not available for posting PR comment");
+                            continue;
+                        }
+                        const comment = `## 🔍 Exploratory Testing Results
+
+**Status:** ${status.result}
+**Prompt:** ${exploratoryPrompt || "N/A"}
+
+**Results:** [View detailed results](${runUrl})
+
+${status.result === "FAILED"
+                            ? "❌ Tests failed - please review the results"
+                            : status.result === "PASSED"
+                                ? "✅ Tests passed successfully"
+                                : "⚠️ Tests were skipped"}`;
+                        await postGitHubPRComment(githubToken, notification.pr_number, comment);
+                    }
+                    break;
+                case "email":
+                    // TODO: Implement email notifications
+                    core.info(`Email notification would be sent to: ${notification.recipient}`);
+                    break;
+                case "webhook":
+                    // TODO: Implement webhook notifications
+                    core.info(`Webhook notification would be sent to: ${notification.url}`);
+                    break;
+            }
+        }
+        catch (error) {
+            core.warning(`Failed to process ${notification.type} notification: ${error instanceof Error ? error.message : "Unknown error"}`);
+        }
+    }
+};
 
 ;// CONCATENATED MODULE: ./src/index.ts
 
@@ -39402,9 +39449,9 @@ async function run() {
         const apiToken = core.getInput("api_token", { required: true });
         const testPlanShortId = parseTestPlanShortId(core.getInput("test_plan_short_id"));
         // Exploratory testing inputs
-        const exploratoryUrl = core.getInput("exploratory_url");
+        const exploratory = core.getBooleanInput("exploratory");
         const exploratoryPrompt = core.getInput("exploratory_prompt");
-        const githubPrNumber = core.getInput("github_pr_number");
+        const notificationsConfigInput = core.getInput("notifications_config");
         const applicationsInput = core.getInput("applications_config");
         let applications;
         if (applicationsInput) {
@@ -39425,6 +39472,18 @@ async function run() {
                 return;
             }
         }
+        // Parse notifications config
+        let notifications;
+        if (notificationsConfigInput) {
+            try {
+                notifications = JSON.parse(notificationsConfigInput);
+                core.debug(`Parsed notifications: ${JSON.stringify(notifications)}`);
+            }
+            catch (error) {
+                core.setFailed(`Invalid JSON format for notifications config input: ${error instanceof Error ? error.message : "Unknown error"}`);
+                return;
+            }
+        }
         if (!projectId) {
             core.setFailed('The "project_id" input is required');
             return;
@@ -39434,18 +39493,13 @@ async function run() {
             return;
         }
         // Validate exploratory testing inputs
-        const isExploratoryMode = exploratoryUrl || exploratoryPrompt;
-        if (isExploratoryMode) {
-            if (!exploratoryUrl) {
-                core.setFailed('The "exploratory_url" input is required when using exploratory testing');
-                return;
-            }
+        if (exploratory) {
             if (!exploratoryPrompt) {
                 core.setFailed('The "exploratory_prompt" input is required when using exploratory testing');
                 return;
             }
-            if (!validateUrl(exploratoryUrl)) {
-                core.setFailed(`Invalid exploratory URL: ${exploratoryUrl}`);
+            if (!applications) {
+                core.setFailed('The "applications_config" input is required when using exploratory testing to specify the URL to test');
                 return;
             }
         }
@@ -39467,10 +39521,10 @@ async function run() {
             payload.applications = applications;
         }
         // Add exploratory testing parameters
-        if (isExploratoryMode) {
+        if (exploratory) {
             core.debug(`Including exploratory testing parameters`);
             payload.integrationName = "GitHub Action";
-            payload.exploratoryUrl = exploratoryUrl;
+            payload.exploratory = true;
             payload.exploratoryPrompt = exploratoryPrompt;
         }
         core.debug(`Triggering QA.tech run with payload: ${JSON.stringify(payload)}`);
@@ -39491,36 +39545,13 @@ async function run() {
                     if (status.status === "COMPLETED") {
                         core.setOutput("run_status", status.status);
                         core.setOutput("run_result", status.result);
-                        // Post comment on GitHub PR if specified and in exploratory mode
-                        if (isExploratoryMode && githubPrNumber) {
+                        // Process notifications if configured
+                        if (notifications) {
                             try {
-                                const prNumber = parseInt(githubPrNumber, 10);
-                                if (isNaN(prNumber)) {
-                                    core.warning(`Invalid PR number: ${githubPrNumber}`);
-                                }
-                                else {
-                                    const githubToken = core.getInput("github_token") || process.env.GITHUB_TOKEN;
-                                    if (!githubToken) {
-                                        core.warning("GitHub token not available for posting PR comment");
-                                    }
-                                    else {
-                                        const comment = `## 🔍 Exploratory Testing Results
-
-**Status:** ${status.result}
-**Test URL:** ${exploratoryUrl}
-**Prompt:** ${exploratoryPrompt}
-
-**Results:** [View detailed results](${result.run.url})
-
-${status.result === "FAILED" ? "❌ Tests failed - please review the results" :
-                                            status.result === "PASSED" ? "✅ Tests passed successfully" :
-                                                "⚠️ Tests were skipped"}`;
-                                        await postGitHubPRComment(githubToken, prNumber, comment);
-                                    }
-                                }
+                                await processNotifications(notifications, status, result.run.url, exploratoryPrompt);
                             }
                             catch (error) {
-                                core.warning(`Failed to post PR comment: ${error instanceof Error ? error.message : "Unknown error"}`);
+                                core.warning(`Failed to process notifications: ${error instanceof Error ? error.message : "Unknown error"}`);
                             }
                         }
                         if (status.result === "FAILED") {
