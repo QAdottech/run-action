@@ -34,7 +34,6 @@ export async function run(): Promise<void> {
 			return;
 		}
 
-		const projectId = core.getInput("project_id", { required: true });
 		const apiToken = core.getInput("api_token", { required: true });
 		const testPlanShortId = parseTestPlanShortId(
 			core.getInput("test_plan_short_id"),
