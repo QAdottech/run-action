@@ -68,11 +68,6 @@ export async function run(): Promise<void> {
 			}
 		}
 
-		if (!projectId) {
-			core.setFailed('The "project_id" input is required');
-			return;
-		}
-
 		if (!apiToken) {
 			core.setFailed('The "api_token" input is required');
 			return;
@@ -127,7 +122,6 @@ export async function run(): Promise<void> {
 				while (true) {
 					const status = await getRunStatus(
 						baseApiUrl,
-						projectId,
 						result.run.shortId,
 						apiToken,
 					);

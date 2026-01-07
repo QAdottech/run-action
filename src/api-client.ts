@@ -76,7 +76,6 @@ export const triggerQATechRun = async (
 };
 export const getRunStatus = async (
 	baseUrl: string,
-	projectId: string,
 	shortId: string,
 	apiToken: string,
 ): Promise<RunStatus> => {
