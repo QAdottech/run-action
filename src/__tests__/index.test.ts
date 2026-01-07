@@ -65,7 +65,7 @@ describe("GitHub Action", () => {
 		await run();
 
 		expect(triggerQATechRun).toHaveBeenCalledWith(
-			"https://app.qa.tech/api/projects/test-project/runs",
+			"https://api.qa.tech/v1/run",
 			"test-token-12345",
 			{
 				trigger: "GITHUB",
@@ -131,7 +131,7 @@ describe("GitHub Action", () => {
 		await run();
 
 		expect(triggerQATechRun).toHaveBeenCalledWith(
-			"https://app.qa.tech/api/projects/test-project/runs",
+			"https://api.qa.tech/v1/run",
 			"test-token-12345",
 			expect.objectContaining({
 				testPlanShortId: "plan1",
@@ -386,7 +386,7 @@ describe("GitHub Action", () => {
 		await run();
 
 		expect(triggerQATechRun).toHaveBeenCalledWith(
-			`${customApiUrl}/api/projects/test-project/runs`,
+			`${customApiUrl}/v1/run`,
 			"test-token-12345",
 			expect.any(Object),
 		);
@@ -615,7 +615,7 @@ describe("GitHub Action", () => {
 		await run();
 
 		expect(triggerQATechRun).toHaveBeenCalledWith(
-			"https://app.qa.tech/api/projects/test-project/runs",
+			"https://api.qa.tech/v1/run",
 			"test-token-12345",
 			expect.objectContaining({
 				applications: {
@@ -679,7 +679,7 @@ describe("GitHub Action", () => {
 		await run();
 
 		expect(triggerQATechRun).toHaveBeenCalledWith(
-			"https://app.qa.tech/api/projects/test-project/runs",
+			"https://api.qa.tech/v1/run",
 			"test-token-12345",
 			expect.objectContaining({
 				applications: {
