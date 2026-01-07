@@ -39340,7 +39340,7 @@ const getRunStatus = async (baseUrl, projectId, shortId, apiToken) => {
 
 
 
-const BASE_URL = "https://app.qa.tech";
+const BASE_URL = "https://api.qa.tech";
 const POLLING_INTERVAL = 20000; // 20 seconds in milliseconds
 const validateUrl = (url) => {
     try {
@@ -39357,7 +39357,7 @@ const parseTestPlanShortId = (input) => {
         return "";
     return input.trim();
 };
-const getStartRunUrl = (baseUrl, projectId) => `${baseUrl}/api/projects/${projectId}/runs`;
+const getStartRunUrl = (baseUrl) => `${baseUrl}/v1/run`;
 async function run() {
     try {
         core.debug("Starting the action");
@@ -39399,7 +39399,7 @@ async function run() {
             core.setFailed('The "api_token" input is required');
             return;
         }
-        const apiUrl = getStartRunUrl(baseApiUrl, projectId);
+        const apiUrl = getStartRunUrl(baseApiUrl);
         const { actor, ref, sha, repo } = github.context;
         const payload = {
             trigger: "GITHUB",
