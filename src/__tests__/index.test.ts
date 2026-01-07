@@ -30,8 +30,6 @@ describe("GitHub Action", () => {
 		// Default core.getInput mock implementation
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
-				case "project_id":
-					return "test-project";
 				case "api_token":
 					return "test-token-12345";
 				case "api_url":
@@ -65,7 +63,7 @@ describe("GitHub Action", () => {
 		await run();
 
 		expect(triggerQATechRun).toHaveBeenCalledWith(
-			"https://app.qa.tech/api/projects/test-project/runs",
+			"https://api.qa.tech/v1/run",
 			"test-token-12345",
 			{
 				trigger: "GITHUB",
@@ -104,8 +102,6 @@ describe("GitHub Action", () => {
 			switch (name) {
 				case "test_plan_short_id":
 					return testPlan;
-				case "project_id":
-					return "test-project";
 				case "api_token":
 					return "test-token-12345";
 				default:
@@ -131,7 +127,7 @@ describe("GitHub Action", () => {
 		await run();
 
 		expect(triggerQATechRun).toHaveBeenCalledWith(
-			"https://app.qa.tech/api/projects/test-project/runs",
+			"https://api.qa.tech/v1/run",
 			"test-token-12345",
 			expect.objectContaining({
 				testPlanShortId: "plan1",
@@ -144,8 +140,6 @@ describe("GitHub Action", () => {
 			switch (name) {
 				case "api_url":
 					return "invalid-url";
-				case "project_id":
-					return "test-project";
 				case "api_token":
 					return "test-token-12345";
 				default:
@@ -188,8 +182,6 @@ describe("GitHub Action", () => {
 			switch (name) {
 				case "test_plan_short_id":
 					return "test1 ";
-				case "project_id":
-					return "test-project";
 				case "api_token":
 					return "test-token-12345";
 				default:
@@ -227,8 +219,6 @@ describe("GitHub Action", () => {
 			switch (name) {
 				case "test_plan_short_id":
 					return "  test-plan-123  ";
-				case "project_id":
-					return "test-project";
 				case "api_token":
 					return "test-token-12345";
 				default:
@@ -266,8 +256,6 @@ describe("GitHub Action", () => {
 			switch (name) {
 				case "test_plan_short_id":
 					return "   "; // Just whitespace
-				case "project_id":
-					return "test-project";
 				case "api_token":
 					return "test-token-12345";
 				default:
@@ -306,22 +294,6 @@ describe("GitHub Action", () => {
 		expect(core.setFailed).toHaveBeenCalledWith(
 			"Action failed: HTTP error! status: 400 - Bad Request",
 		);
-	});
-
-	it("should fail when project_id is missing", async () => {
-		vi.mocked(core.getInput).mockImplementation((name, options) => {
-			if (name === "project_id" && options?.required) {
-				throw new Error("Input required and not supplied: project_id");
-			}
-			return name === "api_token" ? "test-token" : "";
-		});
-
-		await run();
-
-		expect(core.setFailed).toHaveBeenCalledWith(
-			"Action failed: Input required and not supplied: project_id",
-		);
-		expect(triggerQATechRun).not.toHaveBeenCalled();
 	});
 
 	it("should fail when api_token is missing", async () => {
@@ -363,8 +335,6 @@ describe("GitHub Action", () => {
 			switch (name) {
 				case "api_url":
 					return customApiUrl;
-				case "project_id":
-					return "test-project";
 				case "api_token":
 					return "test-token-12345";
 				default:
@@ -386,7 +356,7 @@ describe("GitHub Action", () => {
 		await run();
 
 		expect(triggerQATechRun).toHaveBeenCalledWith(
-			`${customApiUrl}/api/projects/test-project/runs`,
+			`${customApiUrl}/v1/run`,
 			"test-token-12345",
 			expect.any(Object),
 		);
@@ -583,8 +553,6 @@ describe("GitHub Action", () => {
 			switch (name) {
 				case "applications_config":
 					return applicationsJson;
-				case "project_id":
-					return "test-project";
 				case "api_token":
 					return "test-token-12345";
 				case "api_url":
@@ -615,7 +583,7 @@ describe("GitHub Action", () => {
 		await run();
 
 		expect(triggerQATechRun).toHaveBeenCalledWith(
-			"https://app.qa.tech/api/projects/test-project/runs",
+			"https://api.qa.tech/v1/run",
 			"test-token-12345",
 			expect.objectContaining({
 				applications: {
@@ -647,8 +615,6 @@ describe("GitHub Action", () => {
 			switch (name) {
 				case "applications_config":
 					return applicationsJson;
-				case "project_id":
-					return "test-project";
 				case "api_token":
 					return "test-token-12345";
 				case "api_url":
@@ -679,7 +645,7 @@ describe("GitHub Action", () => {
 		await run();
 
 		expect(triggerQATechRun).toHaveBeenCalledWith(
-			"https://app.qa.tech/api/projects/test-project/runs",
+			"https://api.qa.tech/v1/run",
 			"test-token-12345",
 			expect.objectContaining({
 				applications: {

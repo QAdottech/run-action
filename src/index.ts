@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { type Payload, getRunStatus, triggerQATechRun } from "./api-client";
 
-const BASE_URL = "https://app.qa.tech";
+const BASE_URL = "https://api.qa.tech";
 const POLLING_INTERVAL = 20000; // 20 seconds in milliseconds
 
 const validateUrl = (url: string): boolean => {
@@ -21,8 +21,7 @@ const parseTestPlanShortId = (input: string): string => {
 	return input.trim();
 };
 
-const getStartRunUrl = (baseUrl: string, projectId: string) =>
-	`${baseUrl}/api/projects/${projectId}/runs`;
+const getStartRunUrl = (baseUrl: string) => `${baseUrl}/v1/run`;
 
 export async function run(): Promise<void> {
 	try {
@@ -35,7 +34,6 @@ export async function run(): Promise<void> {
 			return;
 		}
 
-		const projectId = core.getInput("project_id", { required: true });
 		const apiToken = core.getInput("api_token", { required: true });
 		const testPlanShortId = parseTestPlanShortId(
 			core.getInput("test_plan_short_id"),
@@ -69,17 +67,12 @@ export async function run(): Promise<void> {
 			}
 		}
 
-		if (!projectId) {
-			core.setFailed('The "project_id" input is required');
-			return;
-		}
-
 		if (!apiToken) {
 			core.setFailed('The "api_token" input is required');
 			return;
 		}
 
-		const apiUrl = getStartRunUrl(baseApiUrl, projectId);
+		const apiUrl = getStartRunUrl(baseApiUrl);
 		const { actor, ref, sha, repo } = github.context;
 
 		const payload: Payload = {
@@ -128,7 +121,6 @@ export async function run(): Promise<void> {
 				while (true) {
 					const status = await getRunStatus(
 						baseApiUrl,
-						projectId,
 						result.run.shortId,
 						apiToken,
 					);

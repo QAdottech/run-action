@@ -76,19 +76,15 @@ export const triggerQATechRun = async (
 };
 export const getRunStatus = async (
 	baseUrl: string,
-	projectId: string,
 	shortId: string,
 	apiToken: string,
 ): Promise<RunStatus> => {
 	try {
-		const response = await fetch(
-			`${baseUrl}/api/projects/${projectId}/runs/${shortId}`,
-			{
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-				},
+		const response = await fetch(`${baseUrl}/run/${shortId}`, {
+			headers: {
+				Authorization: `Bearer ${apiToken}`,
 			},
-		);
+		});
 
 		if (!response.ok) {
 			throw new Error(

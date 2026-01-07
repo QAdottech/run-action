@@ -39312,9 +39312,9 @@ const triggerQATechRun = async (apiUrl, apiToken, payload) => {
         throw error;
     }
 };
-const getRunStatus = async (baseUrl, projectId, shortId, apiToken) => {
+const getRunStatus = async (baseUrl, shortId, apiToken) => {
     try {
-        const response = await fetch(`${baseUrl}/api/projects/${projectId}/runs/${shortId}`, {
+        const response = await fetch(`${baseUrl}/run/${shortId}`, {
             headers: {
                 Authorization: `Bearer ${apiToken}`,
             },
@@ -39340,7 +39340,7 @@ const getRunStatus = async (baseUrl, projectId, shortId, apiToken) => {
 
 
 
-const BASE_URL = "https://app.qa.tech";
+const BASE_URL = "https://api.qa.tech";
 const POLLING_INTERVAL = 20000; // 20 seconds in milliseconds
 const validateUrl = (url) => {
     try {
@@ -39357,7 +39357,7 @@ const parseTestPlanShortId = (input) => {
         return "";
     return input.trim();
 };
-const getStartRunUrl = (baseUrl, projectId) => `${baseUrl}/api/projects/${projectId}/runs`;
+const getStartRunUrl = (baseUrl) => `${baseUrl}/v1/run`;
 async function run() {
     try {
         core.debug("Starting the action");
@@ -39368,7 +39368,6 @@ async function run() {
             core.setFailed(`Invalid API URL: ${baseApiUrl}`);
             return;
         }
-        const projectId = core.getInput("project_id", { required: true });
         const apiToken = core.getInput("api_token", { required: true });
         const testPlanShortId = parseTestPlanShortId(core.getInput("test_plan_short_id"));
         const applicationsInput = core.getInput("applications_config");
@@ -39391,15 +39390,11 @@ async function run() {
                 return;
             }
         }
-        if (!projectId) {
-            core.setFailed('The "project_id" input is required');
-            return;
-        }
         if (!apiToken) {
             core.setFailed('The "api_token" input is required');
             return;
         }
-        const apiUrl = getStartRunUrl(baseApiUrl, projectId);
+        const apiUrl = getStartRunUrl(baseApiUrl);
         const { actor, ref, sha, repo } = github.context;
         const payload = {
             trigger: "GITHUB",
@@ -39429,7 +39424,7 @@ async function run() {
             if (blocking) {
                 core.info(`Waiting for test results... (${result.run.url})`);
                 while (true) {
-                    const status = await getRunStatus(baseApiUrl, projectId, result.run.shortId, apiToken);
+                    const status = await getRunStatus(baseApiUrl, result.run.shortId, apiToken);
                     core.info(`Current status: ${status.status}, Result: ${status.result || "pending"}`);
                     if (status.status === "COMPLETED") {
                         core.setOutput("run_status", status.status);
