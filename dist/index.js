@@ -39312,9 +39312,9 @@ const triggerQATechRun = async (apiUrl, apiToken, payload) => {
         throw error;
     }
 };
-const getRunStatus = async (baseUrl, projectId, shortId, apiToken) => {
+const getRunStatus = async (baseUrl, shortId, apiToken) => {
     try {
-        const response = await fetch(`${baseUrl}/api/projects/${projectId}/runs/${shortId}`, {
+        const response = await fetch(`${baseUrl}/run/${shortId}`, {
             headers: {
                 Authorization: `Bearer ${apiToken}`,
             },
@@ -39391,10 +39391,6 @@ async function run() {
                 return;
             }
         }
-        if (!projectId) {
-            core.setFailed('The "project_id" input is required');
-            return;
-        }
         if (!apiToken) {
             core.setFailed('The "api_token" input is required');
             return;
@@ -39429,7 +39425,7 @@ async function run() {
             if (blocking) {
                 core.info(`Waiting for test results... (${result.run.url})`);
                 while (true) {
-                    const status = await getRunStatus(baseApiUrl, projectId, result.run.shortId, apiToken);
+                    const status = await getRunStatus(baseApiUrl, result.run.shortId, apiToken);
                     core.info(`Current status: ${status.status}, Result: ${status.result || "pending"}`);
                     if (status.status === "COMPLETED") {
                         core.setOutput("run_status", status.status);

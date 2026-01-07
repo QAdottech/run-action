@@ -1,44 +1,41 @@
-name: 'Run QA.tech'
-description: 'This action will run your tests on the QA.tech platform.'
-author: 'QA Tech AB'
+name: "Run QA.tech"
+description: "This action will run your tests on the QA.tech platform."
+author: "QA Tech AB"
 
 inputs:
-  project_id:
-    description: 'The project ID for the QA.tech project.'
-    required: true
   api_token:
-    description: 'The API key for the QA.tech project.'
+    description: "The API key for the QA.tech project."
     required: true
   api_url:
-    description: 'The API url for QA.techs API. Defaults to production.'
+    description: "The API url for QA.techs API. Defaults to production."
     required: false
   test_plan_short_id:
-    description: 'The unique identifier (test plan short ID) for a single test plan to execute.'
+    description: "The unique identifier (test plan short ID) for a single test plan to execute."
     required: false
   blocking:
-    description: 'Whether the run should be blocking.'
+    description: "Whether the run should be blocking."
     required: false
-    default: 'false'
+    default: "false"
   applications_config:
     description: 'JSON string containing application environment overrides. Format: {"applications": {"appId": {"environment": {"url": "...", "name": "..."}}}}'
     required: false
 
 outputs:
   run_created:
-    description: 'Whether the test run was created successfully on QA.tech.'
+    description: "Whether the test run was created successfully on QA.tech."
   run_status:
-    description: 'The final status of the run (INITIATED, RUNNING, COMPLETED, ERROR, or CANCELLED). Only set when blocking is true.'
+    description: "The final status of the run (INITIATED, RUNNING, COMPLETED, ERROR, or CANCELLED). Only set when blocking is true."
   run_result:
-    description: 'The test execution result (PASSED, FAILED, or SKIPPED). Only set when blocking is true.'
+    description: "The test execution result (PASSED, FAILED, or SKIPPED). Only set when blocking is true."
   run_short_id:
-    description: 'The short ID of the run.'
+    description: "The short ID of the run."
   run_url:
-    description: 'The URL of the run.'
+    description: "The URL of the run."
 
 branding:
-  icon: 'user-check'
-  color: 'black'
+  icon: "user-check"
+  color: "black"
 
 runs:
-  using: 'node20'
-  main: 'dist/index.js'
+  using: "node20"
+  main: "dist/index.js"
