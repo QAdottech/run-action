@@ -39368,7 +39368,6 @@ async function run() {
             core.setFailed(`Invalid API URL: ${baseApiUrl}`);
             return;
         }
-        const projectId = core.getInput("project_id", { required: true });
         const apiToken = core.getInput("api_token", { required: true });
         const testPlanShortId = parseTestPlanShortId(core.getInput("test_plan_short_id"));
         const applicationsInput = core.getInput("applications_config");
