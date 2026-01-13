@@ -8,7 +8,7 @@ export interface RunDetails {
 	testCount: number;
 	testPlan: {
 		name: string;
-		short_id: string;
+		shortId: string;
 	} | null;
 }
 
@@ -40,7 +40,7 @@ export interface ApiResponse {
 
 export interface RunStatus {
 	id: string;
-	short_id: string;
+	shortId: string;
 	status: "INITIATED" | "RUNNING" | "COMPLETED" | "ERROR" | "CANCELLED";
 	result: "PASSED" | "FAILED" | "SKIPPED" | null;
 }
