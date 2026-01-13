@@ -117,7 +117,7 @@ describe("GitHub Action", () => {
 				testCount: 10,
 				testPlan: {
 					name: "My test plan",
-					short_id: "testPlan",
+					shortId: "testPlan",
 				},
 			},
 		};
@@ -197,7 +197,7 @@ describe("GitHub Action", () => {
 				testCount: 10,
 				testPlan: {
 					name: "Test 1",
-					short_id: "test1",
+					shortId: "test1",
 				},
 			},
 		};
@@ -234,7 +234,7 @@ describe("GitHub Action", () => {
 				testCount: 10,
 				testPlan: {
 					name: "Test plan 123",
-					short_id: "test-plan-123",
+					shortId: "test-plan-123",
 				},
 			},
 		};
@@ -379,7 +379,7 @@ describe("GitHub Action", () => {
 
 		const mockStatusResponse = {
 			id: "test-id",
-			short_id: "short-id",
+			shortId: "short-id",
 			status: "COMPLETED" as const,
 			result: "PASSED" as const,
 		};
@@ -421,7 +421,7 @@ describe("GitHub Action", () => {
 
 		const mockStatusResponse = {
 			id: "test-id",
-			short_id: "short-id",
+			shortId: "short-id",
 			status: "COMPLETED" as const,
 			result: "FAILED" as const,
 		};
@@ -453,14 +453,14 @@ describe("GitHub Action", () => {
 				testCount: 10,
 				testPlan: {
 					name: "Test Plan Name",
-					short_id: "test-plan-123",
+					shortId: "test-plan-123",
 				},
 			},
 		};
 
 		const mockStatusResponse = {
 			id: "test-id",
-			short_id: "short-id",
+			shortId: "short-id",
 			status: "COMPLETED" as const,
 			result: "PASSED" as const,
 		};
@@ -502,14 +502,14 @@ describe("GitHub Action", () => {
 
 		const runningStatus = {
 			id: "test-id",
-			short_id: "short-id",
+			shortId: "short-id",
 			status: "RUNNING" as const,
 			result: null,
 		};
 
 		const completedStatus = {
 			id: "test-id",
-			short_id: "short-id",
+			shortId: "short-id",
 			status: "COMPLETED" as const,
 			result: "PASSED" as const,
 		};

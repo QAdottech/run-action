@@ -119,7 +119,7 @@ export async function run(): Promise<void> {
 			core.info(
 				`QA.tech run started with ID: ${result.run.shortId}${
 					result.run.testPlan
-						? `, Test Plan: ${result.run.testPlan.name} with ID: ${result.run.testPlan.short_id}`
+						? `, Test Plan: ${result.run.testPlan.name} with ID: ${result.run.testPlan.shortId}`
 						: ""
 				}`,
 			);
