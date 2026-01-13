@@ -586,13 +586,14 @@ describe("GitHub Action", () => {
 			"https://api.qa.tech/v1/run",
 			"test-token-12345",
 			expect.objectContaining({
-				applications: {
-					ONdgMD: {
+				applications: [
+					{
+						applicationShortId: "app+ONdgMD",
 						environment: {
 							url: "https://app.bugduck.tech?release=test1233",
 						},
 					},
-				},
+				],
 			}),
 		);
 		expect(core.setOutput).toHaveBeenCalledWith("run_created", "true");
@@ -648,14 +649,15 @@ describe("GitHub Action", () => {
 			"https://api.qa.tech/v1/run",
 			"test-token-12345",
 			expect.objectContaining({
-				applications: {
-					ONdgMD: {
+				applications: [
+					{
+						applicationShortId: "app+ONdgMD",
 						environment: {
 							url: "https://app.bugduck.tech?release=test1233",
 							name: "test1233",
 						},
 					},
-				},
+				],
 			}),
 		);
 		expect(core.setOutput).toHaveBeenCalledWith("run_created", "true");

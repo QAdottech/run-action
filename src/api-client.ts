@@ -19,15 +19,18 @@ export interface Payload {
 	commitHash: string;
 	repository: `${string}/${string}`;
 	testPlanShortId?: string;
-	applications?: Record<
-		string,
-		{
-			environment: {
-				url: string;
-				name?: string;
-			};
-		}
-	>;
+	applications?: Array<{
+		applicationShortId: string;
+		environment?:
+			| {
+					url: string;
+					name?: string;
+			  }
+			| {
+					shortId: string;
+			  };
+		devicePresetShortId?: string;
+	}>;
 }
 
 export interface ApiResponse {

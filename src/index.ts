@@ -40,7 +40,7 @@ export async function run(): Promise<void> {
 		);
 
 		const applicationsInput = core.getInput("applications_config");
-		let applications:
+		let applicationsInputParsed:
 			| Record<string, { environment: { url: string; name?: string } }>
 			| undefined;
 
@@ -49,8 +49,10 @@ export async function run(): Promise<void> {
 				const parsed = JSON.parse(applicationsInput);
 				// Only accept wrapped format with "applications" property
 				if (parsed.applications) {
-					applications = parsed.applications;
-					core.debug(`Parsed applications: ${JSON.stringify(applications)}`);
+					applicationsInputParsed = parsed.applications;
+					core.debug(
+						`Parsed applications: ${JSON.stringify(applicationsInputParsed)}`,
+					);
 				} else {
 					core.setFailed(
 						'Applications config input must contain an "applications" property at the root level',
@@ -88,11 +90,18 @@ export async function run(): Promise<void> {
 			payload.testPlanShortId = testPlanShortId;
 		}
 
-		if (applications) {
+		if (applicationsInputParsed) {
+			// Transform the old Record format to the new array format for the API
+			const applications: NonNullable<Payload["applications"]> = Object.entries(
+				applicationsInputParsed,
+			).map(([appId, config]) => ({
+				applicationShortId: `app+${appId}`,
+				environment: config.environment,
+				// devicePresetShortId can be added here in the future
+			}));
+
 			core.debug(
-				`Including application overrides for ${
-					Object.keys(applications).length
-				} applications`,
+				`Including application overrides for ${applications.length} applications`,
 			);
 			payload.applications = applications;
 		}
