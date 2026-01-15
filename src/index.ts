@@ -95,7 +95,7 @@ export async function run(): Promise<void> {
 			const applications: NonNullable<Payload["applications"]> = Object.entries(
 				applicationsInputParsed,
 			).map(([appId, config]) => ({
-				applicationShortId: `app+${appId}`,
+				applicationShortId: appId,
 				environment: config.environment,
 				// devicePresetShortId can be added here in the future
 			}));

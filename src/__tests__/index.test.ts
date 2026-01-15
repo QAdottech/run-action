@@ -588,7 +588,7 @@ describe("GitHub Action", () => {
 			expect.objectContaining({
 				applications: [
 					{
-						applicationShortId: "app+ONdgMD",
+						applicationShortId: "app_ONdgMD",
 						environment: {
 							url: "https://app.bugduck.tech?release=test1233",
 						},
@@ -651,7 +651,7 @@ describe("GitHub Action", () => {
 			expect.objectContaining({
 				applications: [
 					{
-						applicationShortId: "app+ONdgMD",
+						applicationShortId: "app_ONdgMD",
 						environment: {
 							url: "https://app.bugduck.tech?release=test1233",
 							name: "test1233",

@@ -39410,7 +39410,7 @@ async function run() {
         if (applicationsInputParsed) {
             // Transform the old Record format to the new array format for the API
             const applications = Object.entries(applicationsInputParsed).map(([appId, config]) => ({
-                applicationShortId: `app+${appId}`,
+                applicationShortId: appId,
                 environment: config.environment,
                 // devicePresetShortId can be added here in the future
             }));
