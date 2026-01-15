@@ -541,7 +541,7 @@ describe("GitHub Action", () => {
 	it("should handle applications with only url field", async () => {
 		const applicationsJson = JSON.stringify({
 			applications: {
-				ONdgMD: {
+				app_ONdgMD: {
 					environment: {
 						url: "https://app.bugduck.tech?release=test1233",
 					},
@@ -603,7 +603,7 @@ describe("GitHub Action", () => {
 	it("should handle applications with both url and name fields", async () => {
 		const applicationsJson = JSON.stringify({
 			applications: {
-				ONdgMD: {
+				app_ONdgMD: {
 					environment: {
 						url: "https://app.bugduck.tech?release=test1233",
 						name: "test1233",
