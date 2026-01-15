@@ -8,7 +8,7 @@ export interface RunDetails {
 	testCount: number;
 	testPlan: {
 		name: string;
-		short_id: string;
+		shortId: string;
 	} | null;
 }
 
@@ -19,15 +19,18 @@ export interface Payload {
 	commitHash: string;
 	repository: `${string}/${string}`;
 	testPlanShortId?: string;
-	applications?: Record<
-		string,
-		{
-			environment: {
-				url: string;
-				name?: string;
-			};
-		}
-	>;
+	applications?: Array<{
+		applicationShortId: string;
+		environment?:
+			| {
+					url: string;
+					name?: string;
+			  }
+			| {
+					shortId: string;
+			  };
+		devicePresetShortId?: string;
+	}>;
 }
 
 export interface ApiResponse {
@@ -37,7 +40,7 @@ export interface ApiResponse {
 
 export interface RunStatus {
 	id: string;
-	short_id: string;
+	shortId: string;
 	status: "INITIATED" | "RUNNING" | "COMPLETED" | "ERROR" | "CANCELLED";
 	result: "PASSED" | "FAILED" | "SKIPPED" | null;
 }

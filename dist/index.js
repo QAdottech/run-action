@@ -39371,14 +39371,14 @@ async function run() {
         const apiToken = core.getInput("api_token", { required: true });
         const testPlanShortId = parseTestPlanShortId(core.getInput("test_plan_short_id"));
         const applicationsInput = core.getInput("applications_config");
-        let applications;
+        let applicationsInputParsed;
         if (applicationsInput) {
             try {
                 const parsed = JSON.parse(applicationsInput);
                 // Only accept wrapped format with "applications" property
                 if (parsed.applications) {
-                    applications = parsed.applications;
-                    core.debug(`Parsed applications: ${JSON.stringify(applications)}`);
+                    applicationsInputParsed = parsed.applications;
+                    core.debug(`Parsed applications: ${JSON.stringify(applicationsInputParsed)}`);
                 }
                 else {
                     core.setFailed('Applications config input must contain an "applications" property at the root level');
@@ -39407,8 +39407,14 @@ async function run() {
             core.debug(`Including test plan: ${testPlanShortId}`);
             payload.testPlanShortId = testPlanShortId;
         }
-        if (applications) {
-            core.debug(`Including application overrides for ${Object.keys(applications).length} applications`);
+        if (applicationsInputParsed) {
+            // Transform the old Record format to the new array format for the API
+            const applications = Object.entries(applicationsInputParsed).map(([appId, config]) => ({
+                applicationShortId: appId,
+                environment: config.environment,
+                // devicePresetShortId can be added here in the future
+            }));
+            core.debug(`Including application overrides for ${applications.length} applications`);
             payload.applications = applications;
         }
         core.debug(`Triggering QA.tech run with payload: ${JSON.stringify(payload)}`);
@@ -39418,7 +39424,7 @@ async function run() {
             core.setOutput("run_short_id", result.run.shortId);
             core.setOutput("run_url", result.run.url);
             core.info(`QA.tech run started with ID: ${result.run.shortId}${result.run.testPlan
-                ? `, Test Plan: ${result.run.testPlan.name} with ID: ${result.run.testPlan.short_id}`
+                ? `, Test Plan: ${result.run.testPlan.name} with ID: ${result.run.testPlan.shortId}`
                 : ""}`);
             core.info(`View run at: ${result.run.url}`);
             if (blocking) {
