@@ -7,21 +7,15 @@ import {
 	getChatConversation,
 	startChangeReview,
 } from "./api-client";
+import {
+	BASE_URL,
+	POLLING_INTERVAL,
+	handleUnexpectedError,
+	sleep,
+	validateUrl,
+} from "./util";
 
-const BASE_URL = "https://api.qa.tech";
-const POLLING_INTERVAL = 20000;
 const POLL_MESSAGE_LIMIT = 5;
-
-const validateUrl = (url: string): boolean => {
-	try {
-		new URL(url);
-		return true;
-	} catch {
-		return false;
-	}
-};
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
@@ -225,11 +219,7 @@ export async function run(): Promise<void> {
 			await sleep(POLLING_INTERVAL);
 		}
 	} catch (error) {
-		if (error instanceof Error) {
-			core.setFailed(`Action failed: ${error.message}`);
-		} else {
-			core.setFailed("An unexpected error occurred");
-		}
+		handleUnexpectedError(error);
 	}
 }
 

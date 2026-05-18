@@ -39385,13 +39385,10 @@ const getChatConversation = async (baseUrl, shortId, apiToken, limit = 20) => {
     }
 };
 
-;// CONCATENATED MODULE: ./src/change-review.ts
-
-
+;// CONCATENATED MODULE: ./src/util.ts
 
 const BASE_URL = "https://api.qa.tech";
-const POLLING_INTERVAL = 20000;
-const POLL_MESSAGE_LIMIT = 5;
+const POLLING_INTERVAL = 20_000;
 const validateUrl = (url) => {
     try {
         new URL(url);
@@ -39402,6 +39399,21 @@ const validateUrl = (url) => {
     }
 };
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const handleUnexpectedError = (error) => {
+    if (error instanceof Error) {
+        lib_core.setFailed(`Action failed: ${error.message}`);
+    }
+    else {
+        lib_core.setFailed("An unexpected error occurred");
+    }
+};
+
+;// CONCATENATED MODULE: ./src/change-review.ts
+
+
+
+
+const POLL_MESSAGE_LIMIT = 5;
 const isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
 const isEnvironmentOverride = (value) => {
     if (!isRecord(value))
@@ -39538,12 +39550,7 @@ async function run() {
         }
     }
     catch (error) {
-        if (error instanceof Error) {
-            lib_core.setFailed(`Action failed: ${error.message}`);
-        }
-        else {
-            lib_core.setFailed("An unexpected error occurred");
-        }
+        handleUnexpectedError(error);
     }
 }
 run();

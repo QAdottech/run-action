@@ -39385,12 +39385,10 @@ const getChatConversation = async (baseUrl, shortId, apiToken, limit = 20) => {
     }
 };
 
-;// CONCATENATED MODULE: ./src/index.ts
-
-
+;// CONCATENATED MODULE: ./src/util.ts
 
 const BASE_URL = "https://api.qa.tech";
-const POLLING_INTERVAL = 20000; // 20 seconds in milliseconds
+const POLLING_INTERVAL = 20_000;
 const validateUrl = (url) => {
     try {
         new URL(url);
@@ -39401,6 +39399,20 @@ const validateUrl = (url) => {
     }
 };
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const handleUnexpectedError = (error) => {
+    if (error instanceof Error) {
+        lib_core.setFailed(`Action failed: ${error.message}`);
+    }
+    else {
+        lib_core.setFailed("An unexpected error occurred");
+    }
+};
+
+;// CONCATENATED MODULE: ./src/index.ts
+
+
+
+
 const parseTestPlanShortId = (input) => {
     if (!input)
         return "";
@@ -39514,12 +39526,7 @@ async function run() {
         }
     }
     catch (error) {
-        if (error instanceof Error) {
-            lib_core.setFailed(`Action failed: ${error.message}`);
-        }
-        else {
-            lib_core.setFailed("An unexpected error occurred");
-        }
+        handleUnexpectedError(error);
     }
 }
 run();

@@ -1,20 +1,13 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { type Payload, getRunStatus, triggerQATechRun } from "./api-client";
-
-const BASE_URL = "https://api.qa.tech";
-const POLLING_INTERVAL = 20000; // 20 seconds in milliseconds
-
-const validateUrl = (url: string): boolean => {
-	try {
-		new URL(url);
-		return true;
-	} catch {
-		return false;
-	}
-};
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+import {
+	BASE_URL,
+	POLLING_INTERVAL,
+	handleUnexpectedError,
+	sleep,
+	validateUrl,
+} from "./util";
 
 const parseTestPlanShortId = (input: string): string => {
 	if (!input) return "";
@@ -183,11 +176,7 @@ export async function run(): Promise<void> {
 			return;
 		}
 	} catch (error) {
-		if (error instanceof Error) {
-			core.setFailed(`Action failed: ${error.message}`);
-		} else {
-			core.setFailed("An unexpected error occurred");
-		}
+		handleUnexpectedError(error);
 	}
 }
 
