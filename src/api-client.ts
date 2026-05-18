@@ -106,3 +106,115 @@ export const getRunStatus = async (
 		throw error;
 	}
 };
+
+export type ChangeReviewEnvironmentOverride =
+	| { url: string; name?: string }
+	| { shortId: string }
+	| { applicationBuildShortId: string };
+
+export interface ChangeReviewApplicationOverride {
+	applicationShortId: string;
+	devicePresetShortId?: string;
+	environment: ChangeReviewEnvironmentOverride;
+}
+
+export interface ChangeReviewPayload {
+	mode: "pr";
+	prUrl: string;
+	vcsProviderId: "github";
+	applicationOverrides: ChangeReviewApplicationOverride[];
+	context?: string;
+}
+
+export type ChatMessageStatus =
+	| "INITIATED"
+	| "PARTIAL"
+	| "COMPLETED"
+	| "CANCELLED"
+	| "FAILED";
+
+export interface ChatMessageItem {
+	id: string;
+	role: "user" | "assistant";
+	createdAt: string;
+	text: string;
+	status?: ChatMessageStatus;
+	isStreaming?: boolean;
+}
+
+export interface ChatConversationResponse {
+	shortId: string;
+	url: string;
+	title?: string;
+	createdAt: string;
+	updatedAt: string;
+	source?: "api" | "ui" | "github" | "gitlab" | "system";
+	messages?: ChatMessageItem[];
+}
+
+export const startChangeReview = async (
+	baseUrl: string,
+	apiToken: string,
+	payload: ChangeReviewPayload,
+): Promise<ChatConversationResponse> => {
+	try {
+		const response = await fetch(`${baseUrl}/v1/chat/change-review`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${apiToken}`,
+			},
+			body: JSON.stringify(payload),
+		});
+
+		if (!response.ok) {
+			throw new Error(
+				`HTTP error! status: ${response.status} - ${await response.text()}`,
+			);
+		}
+
+		const data = (await response.json()) as ChatConversationResponse;
+		return data;
+	} catch (error) {
+		if (error instanceof Error) {
+			core.error(`Error starting change review: ${error.message}`);
+		} else {
+			core.error("An unknown error occurred starting change review");
+		}
+		throw error;
+	}
+};
+
+export const getChatConversation = async (
+	baseUrl: string,
+	shortId: string,
+	apiToken: string,
+	limit = 20,
+): Promise<ChatConversationResponse> => {
+	try {
+		const response = await fetch(
+			`${baseUrl}/v1/chat/${shortId}?limit=${limit}`,
+			{
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
+				},
+			},
+		);
+
+		if (!response.ok) {
+			throw new Error(
+				`HTTP error! status: ${response.status} - ${await response.text()}`,
+			);
+		}
+
+		const data = (await response.json()) as ChatConversationResponse;
+		return data;
+	} catch (error) {
+		if (error instanceof Error) {
+			core.error(`Error getting chat conversation: ${error.message}`);
+		} else {
+			core.error("An unknown error occurred getting chat conversation");
+		}
+		throw error;
+	}
+};
