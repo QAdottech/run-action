@@ -25,7 +25,8 @@ const isEnvironmentOverride = (
 ): value is ChangeReviewEnvironmentOverride => {
 	if (!isRecord(value)) return false;
 	if (typeof value.url === "string" && value.url.length > 0) return true;
-	if (typeof value.shortId === "string" && value.shortId.length > 0) return true;
+	if (typeof value.shortId === "string" && value.shortId.length > 0)
+		return true;
 	if (
 		typeof value.applicationBuildShortId === "string" &&
 		value.applicationBuildShortId.length > 0
@@ -177,9 +178,7 @@ export async function run(): Promise<void> {
 
 		if (!blocking) return;
 
-		core.info(
-			`Waiting for change review to complete... (${conversation.url})`,
-		);
+		core.info(`Waiting for change review to complete... (${conversation.url})`);
 
 		while (true) {
 			const latest = await getChatConversation(

@@ -42,12 +42,7 @@ const mockChatResponse = (
 			role: "user" | "assistant";
 			createdAt: string;
 			text: string;
-			status?:
-				| "INITIATED"
-				| "PARTIAL"
-				| "COMPLETED"
-				| "CANCELLED"
-				| "FAILED";
+			status?: "INITIATED" | "PARTIAL" | "COMPLETED" | "CANCELLED" | "FAILED";
 		}>;
 	}> = {},
 ) => ({
