@@ -39389,8 +39389,6 @@ const getChatConversation = async (baseUrl, shortId, apiToken, limit = 20) => {
 
 const BASE_URL = "https://api.qa.tech";
 const POLLING_INTERVAL = 20_000;
-// Internal ceiling for blocking polls so we never fully rely on the GitHub
-// workflow timeout to stop a stuck run.
 const BLOCKING_TIMEOUT_MS = 60 * 60_000;
 const validateUrl = (url) => {
     try {
