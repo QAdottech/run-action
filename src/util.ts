@@ -4,6 +4,8 @@ export const BASE_URL = "https://api.qa.tech";
 
 export const POLLING_INTERVAL = 20_000;
 
+export const BLOCKING_TIMEOUT_MS = 60 * 60_000;
+
 export const validateUrl = (url: string): boolean => {
 	try {
 		new URL(url);

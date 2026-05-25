@@ -10,7 +10,7 @@ inputs:
     description: "The API url for QA.techs API. Defaults to production."
     required: false
   blocking:
-    description: "Whether the action should wait for the change review to complete."
+    description: "Whether the action should wait for the change review to complete. Blocking polls stop after an internal 60 minute timeout."
     required: false
     default: "false"
   applications_config:
@@ -31,7 +31,7 @@ outputs:
   chat_url:
     description: "The dashboard URL of the change review chat."
   chat_status:
-    description: "Final status of the assistant message (COMPLETED, FAILED, or CANCELLED). Only set when blocking is true."
+    description: "Final status of the assistant message (COMPLETED, FAILED, CANCELLED, or TIMED_OUT). Only set when blocking is true."
   chat_response:
     description: "The assistant's reply text. Only set when blocking is true."
 

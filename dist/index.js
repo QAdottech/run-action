@@ -39389,6 +39389,9 @@ const getChatConversation = async (baseUrl, shortId, apiToken, limit = 20) => {
 
 const BASE_URL = "https://api.qa.tech";
 const POLLING_INTERVAL = 20_000;
+// Internal ceiling for blocking polls so we never fully rely on the GitHub
+// workflow timeout to stop a stuck run.
+const BLOCKING_TIMEOUT_MS = 60 * 60_000;
 const validateUrl = (url) => {
     try {
         new URL(url);
@@ -39489,7 +39492,8 @@ async function run() {
                 : ""}`);
             lib_core.info(`View run at: ${result.run.url}`);
             if (blocking) {
-                lib_core.info(`Waiting for test results... (${result.run.url})`);
+                lib_core.info(`Waiting for test results (timeout: ${BLOCKING_TIMEOUT_MS / 60_000} min)... (${result.run.url})`);
+                const deadline = Date.now() + BLOCKING_TIMEOUT_MS;
                 while (true) {
                     const status = await getRunStatus(baseApiUrl, result.run.shortId, apiToken);
                     lib_core.info(`Current status: ${status.status}, Result: ${status.result || "pending"}`);
@@ -39512,6 +39516,11 @@ async function run() {
                     if (status.status === "ERROR" || status.status === "CANCELLED") {
                         lib_core.setOutput("run_status", status.status);
                         lib_core.setFailed(`Run ${status.status.toLowerCase()}. View details at: ${result.run.url}`);
+                        return;
+                    }
+                    if (Date.now() >= deadline) {
+                        lib_core.setOutput("run_status", "TIMED_OUT");
+                        lib_core.setFailed(`Test run timed out after ${BLOCKING_TIMEOUT_MS / 60_000} minute(s) (last status: ${status.status}). View details at: ${result.run.url}`);
                         return;
                     }
                     // If still running or initiated, wait and check again

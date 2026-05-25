@@ -3,6 +3,7 @@ import * as github from "@actions/github";
 import { type Payload, getRunStatus, triggerQATechRun } from "./api-client";
 import {
 	BASE_URL,
+	BLOCKING_TIMEOUT_MS,
 	POLLING_INTERVAL,
 	handleUnexpectedError,
 	sleep,
@@ -119,7 +120,12 @@ export async function run(): Promise<void> {
 			core.info(`View run at: ${result.run.url}`);
 
 			if (blocking) {
-				core.info(`Waiting for test results... (${result.run.url})`);
+				core.info(
+					`Waiting for test results (timeout: ${
+						BLOCKING_TIMEOUT_MS / 60_000
+					} min)... (${result.run.url})`,
+				);
+				const deadline = Date.now() + BLOCKING_TIMEOUT_MS;
 				while (true) {
 					const status = await getRunStatus(
 						baseApiUrl,
@@ -162,6 +168,18 @@ export async function run(): Promise<void> {
 							`Run ${status.status.toLowerCase()}. View details at: ${
 								result.run.url
 							}`,
+						);
+						return;
+					}
+
+					if (Date.now() >= deadline) {
+						core.setOutput("run_status", "TIMED_OUT");
+						core.setFailed(
+							`Test run timed out after ${
+								BLOCKING_TIMEOUT_MS / 60_000
+							} minute(s) (last status: ${
+								status.status
+							}). View details at: ${result.run.url}`,
 						);
 						return;
 					}

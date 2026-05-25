@@ -13,7 +13,7 @@ inputs:
     description: "The unique identifier (test plan short ID) for a single test plan to execute."
     required: false
   blocking:
-    description: "Whether the run should be blocking."
+    description: "Whether the run should be blocking. Blocking polls stop after an internal 60 minute timeout."
     required: false
     default: "false"
   applications_config:
@@ -24,7 +24,7 @@ outputs:
   run_created:
     description: "Whether the test run was created successfully on QA.tech."
   run_status:
-    description: "The final status of the run (INITIATED, RUNNING, COMPLETED, ERROR, or CANCELLED). Only set when blocking is true."
+    description: "The final status of the run (INITIATED, RUNNING, COMPLETED, ERROR, CANCELLED, or TIMED_OUT). Only set when blocking is true."
   run_result:
     description: "The test execution result (PASSED, FAILED, or SKIPPED). Only set when blocking is true."
   run_short_id:

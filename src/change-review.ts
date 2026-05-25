@@ -9,6 +9,7 @@ import {
 } from "./api-client";
 import {
 	BASE_URL,
+	BLOCKING_TIMEOUT_MS,
 	POLLING_INTERVAL,
 	handleUnexpectedError,
 	sleep,
@@ -178,7 +179,13 @@ export async function run(): Promise<void> {
 
 		if (!blocking) return;
 
-		core.info(`Waiting for change review to complete... (${conversation.url})`);
+		core.info(
+			`Waiting for change review to complete (timeout: ${
+				BLOCKING_TIMEOUT_MS / 60_000
+			} min)... (${conversation.url})`,
+		);
+
+		const deadline = Date.now() + BLOCKING_TIMEOUT_MS;
 
 		while (true) {
 			const latest = await getChatConversation(
@@ -211,6 +218,19 @@ export async function run(): Promise<void> {
 					`Change review ${status.toLowerCase()}. View details at: ${
 						conversation.url
 					}`,
+				);
+				return;
+			}
+
+			if (Date.now() >= deadline) {
+				core.setOutput("chat_status", "TIMED_OUT");
+				core.setOutput("chat_response", assistantMessage?.text ?? "");
+				core.setFailed(
+					`Change review timed out after ${
+						BLOCKING_TIMEOUT_MS / 60_000
+					} minute(s) (last status: ${
+						status ?? "pending"
+					}). View details at: ${conversation.url}`,
 				);
 				return;
 			}

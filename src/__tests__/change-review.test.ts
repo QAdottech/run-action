@@ -9,6 +9,15 @@ vi.mock("../api-client", () => ({
 	startChangeReview: vi.fn(),
 	getChatConversation: vi.fn(),
 }));
+vi.mock("../util", async () => {
+	const actual = await vi.importActual<typeof import("../util")>("../util");
+	return {
+		...actual,
+		// Shrink the internal blocking timeout so the timeout test exits in
+		// a handful of polling iterations under fake timers.
+		BLOCKING_TIMEOUT_MS: 120_000,
+	};
+});
 vi.mock("@actions/github", () => ({
 	default: vi.fn(),
 	context: {
@@ -264,6 +273,46 @@ describe("Change Review GitHub Action", () => {
 			"All clear! No regressions detected.",
 		);
 		expect(core.setFailed).not.toHaveBeenCalled();
+	});
+
+	it("fails the action when blocking polling exceeds the internal timeout", async () => {
+		vi.useFakeTimers();
+
+		setInputs({
+			api_token: "test-token-12345",
+			applications_config: DEFAULT_APPLICATIONS_CONFIG,
+			pr_url: "https://github.com/test-owner/test-repo/pull/42",
+		});
+		setBlocking(true);
+
+		vi.mocked(startChangeReview).mockResolvedValueOnce(mockChatResponse());
+
+		const pending = mockChatResponse({
+			messages: [
+				{
+					id: "msg-1",
+					role: "assistant",
+					createdAt: "2025-01-01T00:00:01Z",
+					text: "still working",
+					status: "INITIATED",
+				},
+			],
+		});
+
+		vi.mocked(getChatConversation).mockResolvedValue(pending);
+
+		const runPromise = run();
+		await vi.runAllTimersAsync();
+		await runPromise;
+
+		expect(core.setOutput).toHaveBeenCalledWith("chat_status", "TIMED_OUT");
+		expect(core.setOutput).toHaveBeenCalledWith(
+			"chat_response",
+			"still working",
+		);
+		expect(core.setFailed).toHaveBeenCalledWith(
+			expect.stringContaining("Change review timed out after 2 minute(s)"),
+		);
 	});
 
 	it("fails the action when the assistant message ends in FAILED", async () => {

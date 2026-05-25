@@ -39389,6 +39389,9 @@ const getChatConversation = async (baseUrl, shortId, apiToken, limit = 20) => {
 
 const BASE_URL = "https://api.qa.tech";
 const POLLING_INTERVAL = 20_000;
+// Internal ceiling for blocking polls so we never fully rely on the GitHub
+// workflow timeout to stop a stuck run.
+const BLOCKING_TIMEOUT_MS = 60 * 60_000;
 const validateUrl = (url) => {
     try {
         new URL(url);
@@ -39528,7 +39531,8 @@ async function run() {
         lib_core.info(`View chat at: ${conversation.url}`);
         if (!blocking)
             return;
-        lib_core.info(`Waiting for change review to complete... (${conversation.url})`);
+        lib_core.info(`Waiting for change review to complete (timeout: ${BLOCKING_TIMEOUT_MS / 60_000} min)... (${conversation.url})`);
+        const deadline = Date.now() + BLOCKING_TIMEOUT_MS;
         while (true) {
             const latest = await getChatConversation(baseApiUrl, conversation.shortId, apiToken, POLL_MESSAGE_LIMIT);
             const assistantMessage = latest.messages?.find((message) => message.role === "assistant");
@@ -39544,6 +39548,12 @@ async function run() {
                 lib_core.setOutput("chat_status", status);
                 lib_core.setOutput("chat_response", assistantMessage?.text ?? "");
                 lib_core.setFailed(`Change review ${status.toLowerCase()}. View details at: ${conversation.url}`);
+                return;
+            }
+            if (Date.now() >= deadline) {
+                lib_core.setOutput("chat_status", "TIMED_OUT");
+                lib_core.setOutput("chat_response", assistantMessage?.text ?? "");
+                lib_core.setFailed(`Change review timed out after ${BLOCKING_TIMEOUT_MS / 60_000} minute(s) (last status: ${status ?? "pending"}). View details at: ${conversation.url}`);
                 return;
             }
             await sleep(POLLING_INTERVAL);

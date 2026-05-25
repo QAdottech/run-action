@@ -10,6 +10,16 @@ vi.mock("../api-client", () => ({
 	triggerQATechRun: vi.fn(),
 	getRunStatus: vi.fn(),
 }));
+vi.mock("../util", async () => {
+	const actual = await vi.importActual<typeof import("../util")>("../util");
+	return {
+		...actual,
+		// Shrink the internal blocking timeout so the timeout test exits in
+		// a handful of polling iterations under fake timers. Still well above
+		// what the longest existing polling test consumes (~40s of fake time).
+		BLOCKING_TIMEOUT_MS: 120_000,
+	};
+});
 vi.mock("@actions/github", () => ({
 	default: vi.fn(),
 	context: {
@@ -533,6 +543,45 @@ describe("GitHub Action", () => {
 			expect.stringContaining(
 				"Test run completed successfully. View results at:",
 			),
+		);
+
+		vi.useRealTimers();
+	});
+
+	it("should fail with TIMED_OUT when blocking polling exceeds the internal timeout", async () => {
+		vi.useFakeTimers();
+
+		vi.mocked(core.getBooleanInput).mockImplementation((name) => {
+			return name === "blocking";
+		});
+
+		const mockRunResponse = {
+			run: {
+				id: "test-id",
+				shortId: "short-id",
+				url: "https://app.qa.tech/dashboard/p/test-project/results/short-id",
+				testCount: 10,
+				testPlan: null,
+			},
+		};
+
+		const runningStatus = {
+			id: "test-id",
+			shortId: "short-id",
+			status: "RUNNING" as const,
+			result: null,
+		};
+
+		vi.mocked(triggerQATechRun).mockResolvedValueOnce(mockRunResponse);
+		vi.mocked(getRunStatus).mockResolvedValue(runningStatus);
+
+		const runPromise = run();
+		await vi.runAllTimersAsync();
+		await runPromise;
+
+		expect(core.setOutput).toHaveBeenCalledWith("run_status", "TIMED_OUT");
+		expect(core.setFailed).toHaveBeenCalledWith(
+			expect.stringContaining("Test run timed out after 2 minute(s)"),
 		);
 
 		vi.useRealTimers();
