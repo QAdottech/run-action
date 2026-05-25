@@ -39288,7 +39288,7 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 
 const triggerQATechRun = async (apiUrl, apiToken, payload) => {
     try {
-        const response = await src_fetch(apiUrl, {
+        const response = await fetch(apiUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -39304,17 +39304,17 @@ const triggerQATechRun = async (apiUrl, apiToken, payload) => {
     }
     catch (error) {
         if (error instanceof Error) {
-            lib_core.error(`Error during fetch operation: ${error.message}`);
+            core.error(`Error during fetch operation: ${error.message}`);
         }
         else {
-            lib_core.error("An unknown error occurred during fetch");
+            core.error("An unknown error occurred during fetch");
         }
         throw error;
     }
 };
 const getRunStatus = async (baseUrl, shortId, apiToken) => {
     try {
-        const response = await src_fetch(`${baseUrl}/run/${shortId}`, {
+        const response = await fetch(`${baseUrl}/run/${shortId}`, {
             headers: {
                 Authorization: `Bearer ${apiToken}`,
             },
@@ -39327,17 +39327,17 @@ const getRunStatus = async (baseUrl, shortId, apiToken) => {
     }
     catch (error) {
         if (error instanceof Error) {
-            lib_core.error(`Error getting run status: ${error.message}`);
+            core.error(`Error getting run status: ${error.message}`);
         }
         else {
-            lib_core.error("An unknown error occurred getting run status");
+            core.error("An unknown error occurred getting run status");
         }
         throw error;
     }
 };
 const startChangeReview = async (baseUrl, apiToken, payload) => {
     try {
-        const response = await fetch(`${baseUrl}/v1/chat/change-review`, {
+        const response = await src_fetch(`${baseUrl}/v1/chat/change-review`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -39353,17 +39353,17 @@ const startChangeReview = async (baseUrl, apiToken, payload) => {
     }
     catch (error) {
         if (error instanceof Error) {
-            core.error(`Error starting change review: ${error.message}`);
+            lib_core.error(`Error starting change review: ${error.message}`);
         }
         else {
-            core.error("An unknown error occurred starting change review");
+            lib_core.error("An unknown error occurred starting change review");
         }
         throw error;
     }
 };
 const getChatConversation = async (baseUrl, shortId, apiToken, limit = 20) => {
     try {
-        const response = await fetch(`${baseUrl}/v1/chat/${shortId}?limit=${limit}`, {
+        const response = await src_fetch(`${baseUrl}/v1/chat/${shortId}?limit=${limit}`, {
             headers: {
                 Authorization: `Bearer ${apiToken}`,
             },
@@ -39376,10 +39376,10 @@ const getChatConversation = async (baseUrl, shortId, apiToken, limit = 20) => {
     }
     catch (error) {
         if (error instanceof Error) {
-            core.error(`Error getting chat conversation: ${error.message}`);
+            lib_core.error(`Error getting chat conversation: ${error.message}`);
         }
         else {
-            core.error("An unknown error occurred getting chat conversation");
+            lib_core.error("An unknown error occurred getting chat conversation");
         }
         throw error;
     }
@@ -39409,127 +39409,152 @@ const handleUnexpectedError = (error) => {
     }
 };
 
-;// CONCATENATED MODULE: ./src/index.ts
+;// CONCATENATED MODULE: ./src/change-review.ts
 
 
 
 
-const parseTestPlanShortId = (input) => {
-    if (!input)
-        return "";
-    return input.trim();
+const POLL_MESSAGE_LIMIT = 5;
+const isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+const isEnvironmentOverride = (value) => {
+    if (!isRecord(value))
+        return false;
+    if (typeof value.url === "string" && value.url.length > 0)
+        return true;
+    if (typeof value.shortId === "string" && value.shortId.length > 0)
+        return true;
+    if (typeof value.applicationBuildShortId === "string" &&
+        value.applicationBuildShortId.length > 0)
+        return true;
+    return false;
 };
-const getStartRunUrl = (baseUrl) => `${baseUrl}/v1/run`;
+const parseApplicationOverrides = (input) => {
+    let parsed;
+    try {
+        parsed = JSON.parse(input);
+    }
+    catch (error) {
+        throw new Error(`Invalid JSON format for applications config input: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+    if (!isRecord(parsed)) {
+        throw new Error('Applications config input must be a JSON object with an "applications" property');
+    }
+    const applicationsMap = parsed.applications;
+    if (!isRecord(applicationsMap)) {
+        throw new Error('Applications config input must contain an "applications" property at the root level');
+    }
+    const entries = Object.entries(applicationsMap);
+    if (entries.length === 0) {
+        throw new Error("Applications config must include at least one application override");
+    }
+    return entries.map(([applicationShortId, rawConfig]) => {
+        if (!isRecord(rawConfig)) {
+            throw new Error(`Application "${applicationShortId}" must be an object with an "environment" property`);
+        }
+        const environment = rawConfig.environment;
+        if (!isEnvironmentOverride(environment)) {
+            throw new Error(`Application "${applicationShortId}" must include an "environment" with one of: url, shortId, or applicationBuildShortId`);
+        }
+        const override = {
+            applicationShortId,
+            environment,
+        };
+        if (typeof rawConfig.devicePresetShortId === "string") {
+            override.devicePresetShortId = rawConfig.devicePresetShortId;
+        }
+        return override;
+    });
+};
+const resolvePrUrl = (input) => {
+    const trimmed = input.trim();
+    if (trimmed.length > 0)
+        return trimmed;
+    const { payload } = github.context;
+    const pullRequest = isRecord(payload) ? payload.pull_request : undefined;
+    if (!isRecord(pullRequest))
+        return undefined;
+    const htmlUrl = pullRequest.html_url;
+    return typeof htmlUrl === "string" && htmlUrl.length > 0
+        ? htmlUrl
+        : undefined;
+};
 async function run() {
     try {
-        lib_core.debug("Starting the action");
+        lib_core.debug("Starting the change-review action");
         const overrideApiUrl = lib_core.getInput("api_url");
         const baseApiUrl = overrideApiUrl.length === 0 ? BASE_URL : overrideApiUrl;
-        const blocking = lib_core.getBooleanInput("blocking");
         if (!validateUrl(baseApiUrl)) {
             lib_core.setFailed(`Invalid API URL: ${baseApiUrl}`);
             return;
         }
         const apiToken = lib_core.getInput("api_token", { required: true });
-        const testPlanShortId = parseTestPlanShortId(lib_core.getInput("test_plan_short_id"));
-        const applicationsInput = lib_core.getInput("applications_config");
-        let applicationsInputParsed;
-        if (applicationsInput) {
-            try {
-                const parsed = JSON.parse(applicationsInput);
-                // Only accept wrapped format with "applications" property
-                if (parsed.applications) {
-                    applicationsInputParsed = parsed.applications;
-                    lib_core.debug(`Parsed applications: ${JSON.stringify(applicationsInputParsed)}`);
-                }
-                else {
-                    lib_core.setFailed('Applications config input must contain an "applications" property at the root level');
-                    return;
-                }
-            }
-            catch (error) {
-                lib_core.setFailed(`Invalid JSON format for applications config input: ${error instanceof Error ? error.message : "Unknown error"}`);
-                return;
-            }
-        }
         if (!apiToken) {
             lib_core.setFailed('The "api_token" input is required');
             return;
         }
-        const apiUrl = getStartRunUrl(baseApiUrl);
-        const { actor, ref, sha, repo } = github.context;
-        const payload = {
-            trigger: "GITHUB",
-            actor,
-            branch: ref,
-            commitHash: sha,
-            repository: `${repo.owner}/${repo.repo}`,
-        };
-        if (testPlanShortId) {
-            lib_core.debug(`Including test plan: ${testPlanShortId}`);
-            payload.testPlanShortId = testPlanShortId;
-        }
-        if (applicationsInputParsed) {
-            // Transform the old Record format to the new array format for the API
-            const applications = Object.entries(applicationsInputParsed).map(([appId, config]) => ({
-                applicationShortId: appId,
-                environment: config.environment,
-                // devicePresetShortId can be added here in the future
-            }));
-            lib_core.debug(`Including application overrides for ${applications.length} applications`);
-            payload.applications = applications;
-        }
-        lib_core.debug(`Triggering QA.tech run with payload: ${JSON.stringify(payload)}`);
-        const result = await triggerQATechRun(apiUrl, apiToken, payload);
-        if (result.run) {
-            lib_core.setOutput("run_created", "true");
-            lib_core.setOutput("run_short_id", result.run.shortId);
-            lib_core.setOutput("run_url", result.run.url);
-            lib_core.info(`QA.tech run started with ID: ${result.run.shortId}${result.run.testPlan
-                ? `, Test Plan: ${result.run.testPlan.name} with ID: ${result.run.testPlan.shortId}`
-                : ""}`);
-            lib_core.info(`View run at: ${result.run.url}`);
-            if (blocking) {
-                lib_core.info(`Waiting for test results (timeout: ${BLOCKING_TIMEOUT_MS / 60_000} min)... (${result.run.url})`);
-                const deadline = Date.now() + BLOCKING_TIMEOUT_MS;
-                while (true) {
-                    const status = await getRunStatus(baseApiUrl, result.run.shortId, apiToken);
-                    lib_core.info(`Current status: ${status.status}, Result: ${status.result || "pending"}`);
-                    if (status.status === "COMPLETED") {
-                        lib_core.setOutput("run_status", status.status);
-                        lib_core.setOutput("run_result", status.result);
-                        if (status.result === "FAILED") {
-                            lib_core.setFailed(`Test run failed. View results at: ${result.run.url}`);
-                            return;
-                        }
-                        if (status.result === "PASSED") {
-                            lib_core.info(`Test run completed successfully. View results at: ${result.run.url}`);
-                            return;
-                        }
-                        if (status.result === "SKIPPED") {
-                            lib_core.warning(`Test run was skipped. View details at: ${result.run.url}`);
-                            return;
-                        }
-                    }
-                    if (status.status === "ERROR" || status.status === "CANCELLED") {
-                        lib_core.setOutput("run_status", status.status);
-                        lib_core.setFailed(`Run ${status.status.toLowerCase()}. View details at: ${result.run.url}`);
-                        return;
-                    }
-                    if (Date.now() >= deadline) {
-                        lib_core.setOutput("run_status", "TIMED_OUT");
-                        lib_core.setFailed(`Test run timed out after ${BLOCKING_TIMEOUT_MS / 60_000} minute(s) (last status: ${status.status}). View details at: ${result.run.url}`);
-                        return;
-                    }
-                    // If still running or initiated, wait and check again
-                    await sleep(POLLING_INTERVAL);
-                }
-            }
-        }
-        else {
-            lib_core.setOutput("run_created", "false");
-            lib_core.setFailed("No run details returned from API");
+        const blocking = lib_core.getBooleanInput("blocking");
+        const applicationsInput = lib_core.getInput("applications_config");
+        if (!applicationsInput || applicationsInput.trim().length === 0) {
+            lib_core.setFailed('The "applications_config" input is required');
             return;
+        }
+        let applicationOverrides;
+        try {
+            applicationOverrides = parseApplicationOverrides(applicationsInput);
+        }
+        catch (error) {
+            lib_core.setFailed(error instanceof Error ? error.message : String(error));
+            return;
+        }
+        const contextInput = lib_core.getInput("context");
+        const context = contextInput.length > 0 ? contextInput : undefined;
+        const prUrl = resolvePrUrl(lib_core.getInput("pr_url"));
+        if (!prUrl) {
+            lib_core.setFailed('A pull request URL is required. Provide the "pr_url" input or run the action on a pull_request event.');
+            return;
+        }
+        const payload = {
+            mode: "pr",
+            prUrl,
+            vcsProviderId: "github",
+            applicationOverrides,
+            ...(context ? { context } : {}),
+        };
+        lib_core.debug(`Starting change review with payload: ${JSON.stringify(payload)}`);
+        const conversation = await startChangeReview(baseApiUrl, apiToken, payload);
+        lib_core.setOutput("chat_created", "true");
+        lib_core.setOutput("chat_short_id", conversation.shortId);
+        lib_core.setOutput("chat_url", conversation.url);
+        lib_core.info(`QA.tech change review started with chat ID: ${conversation.shortId}`);
+        lib_core.info(`View chat at: ${conversation.url}`);
+        if (!blocking)
+            return;
+        lib_core.info(`Waiting for change review to complete (timeout: ${BLOCKING_TIMEOUT_MS / 60_000} min)... (${conversation.url})`);
+        const deadline = Date.now() + BLOCKING_TIMEOUT_MS;
+        while (true) {
+            const latest = await getChatConversation(baseApiUrl, conversation.shortId, apiToken, POLL_MESSAGE_LIMIT);
+            const assistantMessage = latest.messages?.find((message) => message.role === "assistant");
+            const status = assistantMessage?.status;
+            lib_core.info(`Current assistant message status: ${status ?? "pending"}`);
+            if (status === "COMPLETED") {
+                lib_core.setOutput("chat_status", status);
+                lib_core.setOutput("chat_response", assistantMessage?.text ?? "");
+                lib_core.info(`Change review completed. View details at: ${conversation.url}`);
+                return;
+            }
+            if (status === "FAILED" || status === "CANCELLED") {
+                lib_core.setOutput("chat_status", status);
+                lib_core.setOutput("chat_response", assistantMessage?.text ?? "");
+                lib_core.setFailed(`Change review ${status.toLowerCase()}. View details at: ${conversation.url}`);
+                return;
+            }
+            if (Date.now() >= deadline) {
+                lib_core.setOutput("chat_status", "TIMED_OUT");
+                lib_core.setOutput("chat_response", assistantMessage?.text ?? "");
+                lib_core.setFailed(`Change review timed out after ${BLOCKING_TIMEOUT_MS / 60_000} minute(s) (last status: ${status ?? "pending"}). View details at: ${conversation.url}`);
+                return;
+            }
+            await sleep(POLLING_INTERVAL);
         }
     }
     catch (error) {

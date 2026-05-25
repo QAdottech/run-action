@@ -1,20 +1,14 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { type Payload, getRunStatus, triggerQATechRun } from "./api-client";
-
-const BASE_URL = "https://api.qa.tech";
-const POLLING_INTERVAL = 20000; // 20 seconds in milliseconds
-
-const validateUrl = (url: string): boolean => {
-	try {
-		new URL(url);
-		return true;
-	} catch {
-		return false;
-	}
-};
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+import {
+	BASE_URL,
+	BLOCKING_TIMEOUT_MS,
+	POLLING_INTERVAL,
+	handleUnexpectedError,
+	sleep,
+	validateUrl,
+} from "./util";
 
 const parseTestPlanShortId = (input: string): string => {
 	if (!input) return "";
@@ -126,7 +120,12 @@ export async function run(): Promise<void> {
 			core.info(`View run at: ${result.run.url}`);
 
 			if (blocking) {
-				core.info(`Waiting for test results... (${result.run.url})`);
+				core.info(
+					`Waiting for test results (timeout: ${
+						BLOCKING_TIMEOUT_MS / 60_000
+					} min)... (${result.run.url})`,
+				);
+				const deadline = Date.now() + BLOCKING_TIMEOUT_MS;
 				while (true) {
 					const status = await getRunStatus(
 						baseApiUrl,
@@ -173,6 +172,18 @@ export async function run(): Promise<void> {
 						return;
 					}
 
+					if (Date.now() >= deadline) {
+						core.setOutput("run_status", "TIMED_OUT");
+						core.setFailed(
+							`Test run timed out after ${
+								BLOCKING_TIMEOUT_MS / 60_000
+							} minute(s) (last status: ${
+								status.status
+							}). View details at: ${result.run.url}`,
+						);
+						return;
+					}
+
 					// If still running or initiated, wait and check again
 					await sleep(POLLING_INTERVAL);
 				}
@@ -183,11 +194,7 @@ export async function run(): Promise<void> {
 			return;
 		}
 	} catch (error) {
-		if (error instanceof Error) {
-			core.setFailed(`Action failed: ${error.message}`);
-		} else {
-			core.setFailed("An unexpected error occurred");
-		}
+		handleUnexpectedError(error);
 	}
 }
 

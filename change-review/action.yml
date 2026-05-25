@@ -1,0 +1,44 @@
+name: "QA.tech Change Review"
+description: "Trigger a QA.tech change review on a GitHub pull request."
+author: "QA Tech AB"
+
+inputs:
+  api_token:
+    description: "The API key for the QA.tech project."
+    required: true
+  api_url:
+    description: "The API url for QA.techs API. Defaults to production."
+    required: false
+  blocking:
+    description: "Whether the action should wait for the change review to complete. Blocking polls stop after an internal 60 minute timeout."
+    required: false
+    default: "false"
+  applications_config:
+    description: 'JSON string with application environment overrides. Each application must include an `environment`. Format: {"applications": {"appId": {"environment": {"url": "..."}}}}'
+    required: true
+  context:
+    description: "Optional free-form context appended to the change review."
+    required: false
+  pr_url:
+    description: "Pull request URL to review. Defaults to the URL of the pull_request event when available."
+    required: false
+
+outputs:
+  chat_created:
+    description: "Whether the change review chat was created successfully."
+  chat_short_id:
+    description: "The short ID of the change review chat conversation."
+  chat_url:
+    description: "The dashboard URL of the change review chat."
+  chat_status:
+    description: "Final status of the assistant message (COMPLETED, FAILED, CANCELLED, or TIMED_OUT). Only set when blocking is true."
+  chat_response:
+    description: "The assistant's reply text. Only set when blocking is true."
+
+branding:
+  icon: "git-pull-request"
+  color: "black"
+
+runs:
+  using: "node20"
+  main: "../dist/change-review/index.js"

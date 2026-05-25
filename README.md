@@ -146,6 +146,62 @@ applications_config: |
   }
 ```
 
+## Change Review
+
+In addition to running test plans, this repo exposes a second action at `QAdottech/run-action/change-review` that calls QA.tech's `POST /v1/chat/change-review` endpoint to perform an autonomous change review of a GitHub pull request.
+
+### Usage
+
+```yaml
+name: QA.tech Change Review
+on:
+  pull_request:
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: QAdottech/run-action/change-review@v2
+        with:
+          api_token: ${{ secrets.QATECH_API_TOKEN }}
+          applications_config: |
+            {
+              "applications": {
+                "app_ONdgMD": {
+                  "environment": {
+                    "url": "https://preview-${{ github.event.number }}.example.com"
+                  }
+                }
+              }
+            }
+          blocking: true
+```
+
+When invoked on a `pull_request` event the action automatically uses the event's PR URL. To review a different pull request, pass `pr_url` explicitly.
+
+### Inputs
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `api_token` | QA.tech API token. | Yes | - |
+| `applications_config` | JSON of `{ "applications": { appId: { "environment": {...} } } }`. Every entry must include an `environment` (one of `url` / `shortId` / `applicationBuildShortId`). | Yes | - |
+| `api_url` | Custom API URL if needed. | No | `https://api.qa.tech` |
+| `blocking` | Wait for the assistant reply and expose it as an output. | No | `false` |
+| `context` | Free-form context appended to the review. | No | - |
+| `pr_url` | Pull request URL to review. Defaults to the PR URL of the current `pull_request` event. | No | - |
+
+### Outputs
+
+| Output | Description |
+|--------|-------------|
+| `chat_created` | Whether the change review chat was created. |
+| `chat_short_id` | Short ID of the change review chat conversation. |
+| `chat_url` | Dashboard URL of the chat. |
+| `chat_status` | Final status of the assistant message (`COMPLETED`, `FAILED`, or `CANCELLED`). Only set when `blocking` is true. |
+| `chat_response` | The assistant's reply text. Only set when `blocking` is true. |
+
+When `blocking: true` the action polls `GET /v1/chat/{chat_short_id}` every 20 seconds until the latest assistant message reaches `COMPLETED`, `FAILED`, or `CANCELLED`. `FAILED` and `CANCELLED` will fail the workflow step.
+
 ## Development
 
 ```bash

@@ -7,7 +7,7 @@
 		"format": "biome format --write .",
 		"lint": "biome lint --write .",
 		"lint:fix": "biome check --write .",
-		"build": "rimraf dist && ncc build src/index.ts",
+		"build": "rimraf dist && ncc build src/index.ts -o dist && ncc build src/change-review.ts -o dist/change-review",
 		"test": "vitest run"
 	},
 	"exports": {
