@@ -3,6 +3,9 @@ description: "This action will run your tests on the QA.tech platform."
 author: "QA Tech AB"
 
 inputs:
+  project_short_id:
+    description: "The QA.tech project short ID."
+    required: true
   api_token:
     description: "The API key for the QA.tech project."
     required: true

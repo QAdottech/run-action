@@ -40,6 +40,8 @@ describe("GitHub Action", () => {
 		// Default core.getInput mock implementation
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
+				case "project_short_id":
+					return "proj_12345";
 				case "api_token":
 					return "test-token-12345";
 				case "api_url":
@@ -77,6 +79,7 @@ describe("GitHub Action", () => {
 			"test-token-12345",
 			{
 				trigger: "GITHUB",
+				projectShortId: "proj_12345",
 				actor: "testUser",
 				branch: "refs/heads/main",
 				commitHash: "abc123",
@@ -110,6 +113,8 @@ describe("GitHub Action", () => {
 		const testPlan = "plan1";
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
+				case "project_short_id":
+					return "proj_12345";
 				case "test_plan_short_id":
 					return testPlan;
 				case "api_token":
@@ -148,6 +153,8 @@ describe("GitHub Action", () => {
 	it("should fail when API URL is invalid", async () => {
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
+				case "project_short_id":
+					return "proj_12345";
 				case "api_url":
 					return "invalid-url";
 				case "api_token":
@@ -190,6 +197,8 @@ describe("GitHub Action", () => {
 	it("should handle malformed test plan IDs", async () => {
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
+				case "project_short_id":
+					return "proj_12345";
 				case "test_plan_short_id":
 					return "test1 ";
 				case "api_token":
@@ -227,6 +236,8 @@ describe("GitHub Action", () => {
 	it("should properly trim whitespace from test plan ID", async () => {
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
+				case "project_short_id":
+					return "proj_12345";
 				case "test_plan_short_id":
 					return "  test-plan-123  ";
 				case "api_token":
@@ -264,6 +275,8 @@ describe("GitHub Action", () => {
 	it("should handle empty test plan ID string", async () => {
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
+				case "project_short_id":
+					return "proj_12345";
 				case "test_plan_short_id":
 					return "   "; // Just whitespace
 				case "api_token":
@@ -311,13 +324,27 @@ describe("GitHub Action", () => {
 			if (name === "api_token" && options?.required) {
 				throw new Error("Input required and not supplied: api_token");
 			}
-			return name === "project_id" ? "test-project" : "";
+			return name === "project_short_id" ? "proj_12345" : "";
 		});
 
 		await run();
 
 		expect(core.setFailed).toHaveBeenCalledWith(
 			"Action failed: Input required and not supplied: api_token",
+		);
+		expect(triggerQATechRun).not.toHaveBeenCalled();
+	});
+
+	it("should fail when project_short_id is missing", async () => {
+		vi.mocked(core.getInput).mockImplementation((name) => {
+			if (name === "api_token") return "test-token-12345";
+			return "";
+		});
+
+		await run();
+
+		expect(core.setFailed).toHaveBeenCalledWith(
+			'The "project_short_id" input is required',
 		);
 		expect(triggerQATechRun).not.toHaveBeenCalled();
 	});
@@ -343,6 +370,8 @@ describe("GitHub Action", () => {
 		const customApiUrl = "https://custom.qa.tech";
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
+				case "project_short_id":
+					return "proj_12345";
 				case "api_url":
 					return customApiUrl;
 				case "api_token":
@@ -600,6 +629,8 @@ describe("GitHub Action", () => {
 
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
+				case "project_short_id":
+					return "proj_12345";
 				case "applications_config":
 					return applicationsJson;
 				case "api_token":
@@ -663,6 +694,8 @@ describe("GitHub Action", () => {
 
 		vi.mocked(core.getInput).mockImplementation((name) => {
 			switch (name) {
+				case "project_short_id":
+					return "proj_12345";
 				case "applications_config":
 					return applicationsJson;
 				case "api_token":

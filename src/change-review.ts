@@ -128,6 +128,14 @@ export async function run(): Promise<void> {
 			return;
 		}
 
+		const projectShortId = core.getInput("project_short_id", {
+			required: true,
+		});
+		if (!projectShortId) {
+			core.setFailed('The "project_short_id" input is required');
+			return;
+		}
+
 		const blocking = core.getBooleanInput("blocking");
 
 		const applicationsInput = core.getInput("applications_config");
@@ -157,6 +165,7 @@ export async function run(): Promise<void> {
 
 		const payload: ChangeReviewPayload = {
 			mode: "pr",
+			projectShortId,
 			prUrl,
 			vcsProviderId: "github",
 			applicationOverrides,
