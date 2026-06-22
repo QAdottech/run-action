@@ -39283,7 +39283,70 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 	});
 }
 
+;// CONCATENATED MODULE: ./src/util.ts
+
+const BASE_URL = "https://api.qa.tech";
+const POLLING_INTERVAL = 20_000;
+const BLOCKING_TIMEOUT_MS = 60 * 60_000;
+/** Extra blocking waits after the first timeout while the review is still pending. */
+const BLOCKING_TIMEOUT_RETRIES = 2;
+const API_RETRY_ATTEMPTS = 3;
+const API_RETRY_DELAY_MS = 5_000;
+const RETRYABLE_HTTP_STATUS = new Set([408, 429, 500, 502, 503, 504]);
+const isRetryableError = (error) => {
+    if (!(error instanceof Error))
+        return false;
+    const statusMatch = error.message.match(/HTTP error! status: (\d+)/);
+    if (statusMatch) {
+        return RETRYABLE_HTTP_STATUS.has(Number(statusMatch[1]));
+    }
+    const message = error.message.toLowerCase();
+    return (error.name === "FetchError" ||
+        message.includes("network") ||
+        message.includes("timeout") ||
+        message.includes("econnreset") ||
+        message.includes("etimedout") ||
+        message.includes("socket hang up"));
+};
+const withRetry = async (operation, label, maxAttempts = API_RETRY_ATTEMPTS, delayMs = API_RETRY_DELAY_MS) => {
+    let lastError;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            return await operation();
+        }
+        catch (error) {
+            lastError = error;
+            if (attempt === maxAttempts || !isRetryableError(error)) {
+                throw error;
+            }
+            const message = error instanceof Error ? error.message : String(error);
+            lib_core.warning(`${label} failed (attempt ${attempt}/${maxAttempts}): ${message}. Retrying in ${delayMs / 1_000}s...`);
+            await sleep(delayMs);
+        }
+    }
+    throw lastError;
+};
+const validateUrl = (url) => {
+    try {
+        new URL(url);
+        return true;
+    }
+    catch {
+        return false;
+    }
+};
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const handleUnexpectedError = (error) => {
+    if (error instanceof Error) {
+        lib_core.setFailed(`Action failed: ${error.message}`);
+    }
+    else {
+        lib_core.setFailed("An unexpected error occurred");
+    }
+};
+
 ;// CONCATENATED MODULE: ./src/api-client.ts
+
 
 
 const triggerQATechRun = async (apiUrl, apiToken, payload) => {
@@ -39337,19 +39400,20 @@ const getRunStatus = async (baseUrl, shortId, apiToken) => {
 };
 const startChangeReview = async (baseUrl, apiToken, payload) => {
     try {
-        const response = await src_fetch(`${baseUrl}/v1/chat/change-review`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${apiToken}`,
-            },
-            body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status} - ${await response.text()}`);
-        }
-        const data = (await response.json());
-        return data;
+        return await withRetry(async () => {
+            const response = await src_fetch(`${baseUrl}/v1/chat/change-review`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${apiToken}`,
+                },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} - ${await response.text()}`);
+            }
+            return (await response.json());
+        }, "Start change review");
     }
     catch (error) {
         if (error instanceof Error) {
@@ -39363,16 +39427,17 @@ const startChangeReview = async (baseUrl, apiToken, payload) => {
 };
 const getChatConversation = async (baseUrl, shortId, apiToken, limit = 20) => {
     try {
-        const response = await src_fetch(`${baseUrl}/v1/chat/${shortId}?limit=${limit}`, {
-            headers: {
-                Authorization: `Bearer ${apiToken}`,
-            },
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status} - ${await response.text()}`);
-        }
-        const data = (await response.json());
-        return data;
+        return await withRetry(async () => {
+            const response = await src_fetch(`${baseUrl}/v1/chat/${shortId}?limit=${limit}`, {
+                headers: {
+                    Authorization: `Bearer ${apiToken}`,
+                },
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} - ${await response.text()}`);
+            }
+            return (await response.json());
+        }, "Get chat conversation");
     }
     catch (error) {
         if (error instanceof Error) {
@@ -39382,30 +39447,6 @@ const getChatConversation = async (baseUrl, shortId, apiToken, limit = 20) => {
             lib_core.error("An unknown error occurred getting chat conversation");
         }
         throw error;
-    }
-};
-
-;// CONCATENATED MODULE: ./src/util.ts
-
-const BASE_URL = "https://api.qa.tech";
-const POLLING_INTERVAL = 20_000;
-const BLOCKING_TIMEOUT_MS = 60 * 60_000;
-const validateUrl = (url) => {
-    try {
-        new URL(url);
-        return true;
-    }
-    catch {
-        return false;
-    }
-};
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const handleUnexpectedError = (error) => {
-    if (error instanceof Error) {
-        lib_core.setFailed(`Action failed: ${error.message}`);
-    }
-    else {
-        lib_core.setFailed("An unexpected error occurred");
     }
 };
 
@@ -39530,7 +39571,8 @@ async function run() {
         if (!blocking)
             return;
         lib_core.info(`Waiting for change review to complete (timeout: ${BLOCKING_TIMEOUT_MS / 60_000} min)... (${conversation.url})`);
-        const deadline = Date.now() + BLOCKING_TIMEOUT_MS;
+        let timeoutRetriesLeft = BLOCKING_TIMEOUT_RETRIES;
+        let deadline = Date.now() + BLOCKING_TIMEOUT_MS;
         while (true) {
             const latest = await getChatConversation(baseApiUrl, conversation.shortId, apiToken, POLL_MESSAGE_LIMIT);
             const assistantMessage = latest.messages?.find((message) => message.role === "assistant");
@@ -39549,9 +39591,15 @@ async function run() {
                 return;
             }
             if (Date.now() >= deadline) {
+                if (timeoutRetriesLeft > 0) {
+                    timeoutRetriesLeft--;
+                    lib_core.warning(`Change review still in progress after ${BLOCKING_TIMEOUT_MS / 60_000} minute(s) (last status: ${status ?? "pending"}). Retrying (${timeoutRetriesLeft} retries remaining)...`);
+                    deadline = Date.now() + BLOCKING_TIMEOUT_MS;
+                    continue;
+                }
                 lib_core.setOutput("chat_status", "TIMED_OUT");
                 lib_core.setOutput("chat_response", assistantMessage?.text ?? "");
-                lib_core.setFailed(`Change review timed out after ${BLOCKING_TIMEOUT_MS / 60_000} minute(s) (last status: ${status ?? "pending"}). View details at: ${conversation.url}`);
+                lib_core.setFailed(`Change review timed out after ${BLOCKING_TIMEOUT_MS / 60_000} minute(s) and ${BLOCKING_TIMEOUT_RETRIES} retries (last status: ${status ?? "pending"}). View details at: ${conversation.url}`);
                 return;
             }
             await sleep(POLLING_INTERVAL);

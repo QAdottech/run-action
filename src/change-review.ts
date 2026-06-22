@@ -10,6 +10,7 @@ import {
 import {
 	BASE_URL,
 	BLOCKING_TIMEOUT_MS,
+	BLOCKING_TIMEOUT_RETRIES,
 	POLLING_INTERVAL,
 	handleUnexpectedError,
 	sleep,
@@ -185,7 +186,8 @@ export async function run(): Promise<void> {
 			} min)... (${conversation.url})`,
 		);
 
-		const deadline = Date.now() + BLOCKING_TIMEOUT_MS;
+		let timeoutRetriesLeft = BLOCKING_TIMEOUT_RETRIES;
+		let deadline = Date.now() + BLOCKING_TIMEOUT_MS;
 
 		while (true) {
 			const latest = await getChatConversation(
@@ -223,12 +225,25 @@ export async function run(): Promise<void> {
 			}
 
 			if (Date.now() >= deadline) {
+				if (timeoutRetriesLeft > 0) {
+					timeoutRetriesLeft--;
+					core.warning(
+						`Change review still in progress after ${
+							BLOCKING_TIMEOUT_MS / 60_000
+						} minute(s) (last status: ${
+							status ?? "pending"
+						}). Retrying (${timeoutRetriesLeft} retries remaining)...`,
+					);
+					deadline = Date.now() + BLOCKING_TIMEOUT_MS;
+					continue;
+				}
+
 				core.setOutput("chat_status", "TIMED_OUT");
 				core.setOutput("chat_response", assistantMessage?.text ?? "");
 				core.setFailed(
 					`Change review timed out after ${
 						BLOCKING_TIMEOUT_MS / 60_000
-					} minute(s) (last status: ${
+					} minute(s) and ${BLOCKING_TIMEOUT_RETRIES} retries (last status: ${
 						status ?? "pending"
 					}). View details at: ${conversation.url}`,
 				);

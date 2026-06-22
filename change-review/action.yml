@@ -10,7 +10,7 @@ inputs:
     description: "The API url for QA.techs API. Defaults to production."
     required: false
   blocking:
-    description: "Whether the action should wait for the change review to complete. Blocking polls stop after an internal 60 minute timeout."
+    description: "Whether the action should wait for the change review to complete. Blocking polls stop after an internal 60 minute timeout, with up to 2 retries while the review is still pending."
     required: false
     default: "false"
   applications_config:
