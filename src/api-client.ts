@@ -14,6 +14,7 @@ export interface RunDetails {
 
 export interface Payload {
 	trigger: string;
+	projectShortId: string;
 	actor: string;
 	branch: string;
 	commitHash: string;
@@ -120,6 +121,7 @@ export interface ChangeReviewApplicationOverride {
 
 export interface ChangeReviewPayload {
 	mode: "pr";
+	projectShortId: string;
 	prUrl: string;
 	vcsProviderId: "github";
 	applicationOverrides: ChangeReviewApplicationOverride[];

@@ -88,6 +88,7 @@ describe("Change Review GitHub Action", () => {
 		(github.context as { payload: Record<string, unknown> }).payload = {};
 
 		setInputs({
+			project_short_id: "proj_12345",
 			api_token: "test-token-12345",
 			applications_config: DEFAULT_APPLICATIONS_CONFIG,
 		});
@@ -100,6 +101,7 @@ describe("Change Review GitHub Action", () => {
 
 	it("starts a change review using the pr_url input", async () => {
 		setInputs({
+			project_short_id: "proj_12345",
 			api_token: "test-token-12345",
 			applications_config: DEFAULT_APPLICATIONS_CONFIG,
 			pr_url: "https://github.com/test-owner/test-repo/pull/42",
@@ -114,6 +116,7 @@ describe("Change Review GitHub Action", () => {
 			"test-token-12345",
 			{
 				mode: "pr",
+				projectShortId: "proj_12345",
 				prUrl: "https://github.com/test-owner/test-repo/pull/42",
 				vcsProviderId: "github",
 				applicationOverrides: [
@@ -160,6 +163,7 @@ describe("Change Review GitHub Action", () => {
 
 	it("forwards the optional context input", async () => {
 		setInputs({
+			project_short_id: "proj_12345",
 			api_token: "test-token-12345",
 			applications_config: DEFAULT_APPLICATIONS_CONFIG,
 			pr_url: "https://github.com/test-owner/test-repo/pull/42",
@@ -177,8 +181,25 @@ describe("Change Review GitHub Action", () => {
 		);
 	});
 
+	it("fails when project_short_id is missing", async () => {
+		const inputs: Record<string, string> = {
+			api_token: "test-token-12345",
+			applications_config: DEFAULT_APPLICATIONS_CONFIG,
+			pr_url: "https://github.com/test-owner/test-repo/pull/42",
+		};
+		vi.mocked(core.getInput).mockImplementation((name) => inputs[name] ?? "");
+
+		await run();
+
+		expect(core.setFailed).toHaveBeenCalledWith(
+			'The "project_short_id" input is required',
+		);
+		expect(startChangeReview).not.toHaveBeenCalled();
+	});
+
 	it("fails when applications_config is missing", async () => {
 		setInputs({
+			project_short_id: "proj_12345",
 			api_token: "test-token-12345",
 		});
 
@@ -192,6 +213,7 @@ describe("Change Review GitHub Action", () => {
 
 	it("fails when an applications_config entry has no environment", async () => {
 		setInputs({
+			project_short_id: "proj_12345",
 			api_token: "test-token-12345",
 			applications_config: JSON.stringify({
 				applications: {
@@ -211,6 +233,7 @@ describe("Change Review GitHub Action", () => {
 
 	it("fails when no PR URL can be resolved", async () => {
 		setInputs({
+			project_short_id: "proj_12345",
 			api_token: "test-token-12345",
 			applications_config: DEFAULT_APPLICATIONS_CONFIG,
 		});
@@ -227,6 +250,7 @@ describe("Change Review GitHub Action", () => {
 		vi.useFakeTimers();
 
 		setInputs({
+			project_short_id: "proj_12345",
 			api_token: "test-token-12345",
 			applications_config: DEFAULT_APPLICATIONS_CONFIG,
 			pr_url: "https://github.com/test-owner/test-repo/pull/42",
@@ -279,6 +303,7 @@ describe("Change Review GitHub Action", () => {
 		vi.useFakeTimers();
 
 		setInputs({
+			project_short_id: "proj_12345",
 			api_token: "test-token-12345",
 			applications_config: DEFAULT_APPLICATIONS_CONFIG,
 			pr_url: "https://github.com/test-owner/test-repo/pull/42",
@@ -319,6 +344,7 @@ describe("Change Review GitHub Action", () => {
 		vi.useFakeTimers();
 
 		setInputs({
+			project_short_id: "proj_12345",
 			api_token: "test-token-12345",
 			applications_config: DEFAULT_APPLICATIONS_CONFIG,
 			pr_url: "https://github.com/test-owner/test-repo/pull/42",
@@ -357,6 +383,7 @@ describe("Change Review GitHub Action", () => {
 
 	it("fails when the API URL is invalid", async () => {
 		setInputs({
+			project_short_id: "proj_12345",
 			api_token: "test-token-12345",
 			api_url: "invalid-url",
 			applications_config: DEFAULT_APPLICATIONS_CONFIG,
@@ -371,6 +398,7 @@ describe("Change Review GitHub Action", () => {
 
 	it("surfaces API errors via core.setFailed", async () => {
 		setInputs({
+			project_short_id: "proj_12345",
 			api_token: "test-token-12345",
 			applications_config: DEFAULT_APPLICATIONS_CONFIG,
 			pr_url: "https://github.com/test-owner/test-repo/pull/42",

@@ -29,6 +29,13 @@ export async function run(): Promise<void> {
 		}
 
 		const apiToken = core.getInput("api_token", { required: true });
+		const projectShortId = core.getInput("project_short_id", {
+			required: true,
+		});
+		if (!projectShortId) {
+			core.setFailed('The "project_short_id" input is required');
+			return;
+		}
 		const testPlanShortId = parseTestPlanShortId(
 			core.getInput("test_plan_short_id"),
 		);
@@ -73,6 +80,7 @@ export async function run(): Promise<void> {
 
 		const payload: Payload = {
 			trigger: "GITHUB",
+			projectShortId,
 			actor,
 			branch: ref,
 			commitHash: sha,
