@@ -16,6 +16,8 @@ vi.mock("../util", async () => {
 		// Shrink the internal blocking timeout so the timeout test exits in
 		// a handful of polling iterations under fake timers.
 		BLOCKING_TIMEOUT_MS: 120_000,
+		BLOCKING_TIMEOUT_RETRIES: 1,
+		API_RETRY_DELAY_MS: 1,
 	};
 });
 vi.mock("@actions/github", () => ({
@@ -335,9 +337,67 @@ describe("Change Review GitHub Action", () => {
 			"chat_response",
 			"still working",
 		);
-		expect(core.setFailed).toHaveBeenCalledWith(
-			expect.stringContaining("Change review timed out after 2 minute(s)"),
+		expect(core.warning).toHaveBeenCalledWith(
+			expect.stringContaining("Retrying (0 retries remaining)"),
 		);
+		expect(core.setFailed).toHaveBeenCalledWith(
+			expect.stringContaining(
+				"Change review timed out after 2 minute(s) and 1 retries",
+			),
+		);
+	});
+
+	it("retries blocking polling after a timeout when the review is still pending", async () => {
+		vi.useFakeTimers();
+
+		setInputs({
+			project_short_id: "proj_12345",
+			api_token: "test-token-12345",
+			applications_config: DEFAULT_APPLICATIONS_CONFIG,
+			pr_url: "https://github.com/test-owner/test-repo/pull/42",
+		});
+		setBlocking(true);
+
+		vi.mocked(startChangeReview).mockResolvedValueOnce(mockChatResponse());
+
+		const pending = mockChatResponse({
+			messages: [
+				{
+					id: "msg-1",
+					role: "assistant",
+					createdAt: "2025-01-01T00:00:01Z",
+					text: "still working",
+					status: "INITIATED",
+				},
+			],
+		});
+		const completed = mockChatResponse({
+			messages: [
+				{
+					id: "msg-1",
+					role: "assistant",
+					createdAt: "2025-01-01T00:00:02Z",
+					text: "Finished after a retry window.",
+					status: "COMPLETED",
+				},
+			],
+		});
+
+		let polls = 0;
+		vi.mocked(getChatConversation).mockImplementation(async () => {
+			polls += 1;
+			return polls <= 7 ? pending : completed;
+		});
+
+		const runPromise = run();
+		await vi.runAllTimersAsync();
+		await runPromise;
+
+		expect(core.warning).toHaveBeenCalledWith(
+			expect.stringContaining("Retrying (0 retries remaining)"),
+		);
+		expect(core.setOutput).toHaveBeenCalledWith("chat_status", "COMPLETED");
+		expect(core.setFailed).not.toHaveBeenCalled();
 	});
 
 	it("fails the action when the assistant message ends in FAILED", async () => {
