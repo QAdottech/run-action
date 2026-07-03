@@ -351,6 +351,7 @@ describe("Change Review GitHub Action", () => {
 		vi.useFakeTimers();
 
 		setInputs({
+			project_short_id: "proj_12345",
 			api_token: "test-token-12345",
 			applications_config: DEFAULT_APPLICATIONS_CONFIG,
 			pr_url: "https://github.com/test-owner/test-repo/pull/42",
