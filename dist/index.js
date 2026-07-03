@@ -39472,6 +39472,13 @@ async function run() {
             return;
         }
         const apiToken = lib_core.getInput("api_token", { required: true });
+        const projectShortId = lib_core.getInput("project_short_id", {
+            required: true,
+        });
+        if (!projectShortId) {
+            lib_core.setFailed('The "project_short_id" input is required');
+            return;
+        }
         const testPlanShortId = parseTestPlanShortId(lib_core.getInput("test_plan_short_id"));
         const applicationsInput = lib_core.getInput("applications_config");
         let applicationsInputParsed;
@@ -39501,6 +39508,7 @@ async function run() {
         const { actor, ref, sha, repo } = github.context;
         const payload = {
             trigger: "GITHUB",
+            projectShortId,
             actor,
             branch: ref,
             commitHash: sha,

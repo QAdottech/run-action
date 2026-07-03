@@ -39533,6 +39533,13 @@ async function run() {
             lib_core.setFailed('The "api_token" input is required');
             return;
         }
+        const projectShortId = lib_core.getInput("project_short_id", {
+            required: true,
+        });
+        if (!projectShortId) {
+            lib_core.setFailed('The "project_short_id" input is required');
+            return;
+        }
         const blocking = lib_core.getBooleanInput("blocking");
         const applicationsInput = lib_core.getInput("applications_config");
         if (!applicationsInput || applicationsInput.trim().length === 0) {
@@ -39556,6 +39563,7 @@ async function run() {
         }
         const payload = {
             mode: "pr",
+            projectShortId,
             prUrl,
             vcsProviderId: "github",
             applicationOverrides,

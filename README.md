@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: QAdottech/run-action@v1
         with:
-          project_id: 'your-project-id'
+          project_short_id: 'your-project-short-id'
           api_token: ${{ secrets.QATECH_API_TOKEN }}
           test_plan_short_id: 'jgbinp'
 ```
@@ -26,14 +26,14 @@ jobs:
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `project_id` | Your QA.tech project ID | Yes | - |
+| `project_short_id` | Your QA.tech project short ID | Yes | - |
 | `api_token` | QA.tech API token | Yes | - |
 | `api_url` | Custom API URL if needed | No | <https://app.qa.tech> |
 | `test_plan_short_id` | Test plan short ID to run | No | - |
 | `blocking` | Enables blocking mode to wait for the test run to complete | No | false |
 | `applications_config` | JSON string containing application environment overrides | No | - |
 
-You can find your project ID and generate an API token in your [QA.tech project settings](https://app.qa.tech/dashboard/current-project/settings/integrations).
+You can find your project short ID and generate an API token in your [QA.tech project settings](https://app.qa.tech/dashboard/current-project/settings/integrations).
 
 ## Outputs
 
@@ -54,7 +54,7 @@ For example:
 ```yaml
 - uses: QAdottech/run-action@v2
   with:
-    project_id: 'your-project-id'
+    project_short_id: 'your-project-short-id'
     api_token: ${{ secrets.QATECH_API_TOKEN }}
     test_plan_short_id: 'jgbinp'
 ```
@@ -73,7 +73,7 @@ To enable blocking mode, set the `blocking` input to `true`:
 ```yaml
 - uses: QAdottech/run-action@v2
   with:
-    project_id: 'your-project-id'
+    project_short_id: 'your-project-short-id'
     api_token: ${{ secrets.QATECH_API_TOKEN }}
     blocking: true
 ```
@@ -107,7 +107,7 @@ The input expects a JSON string with the following format:
 ```yaml
 - uses: QAdottech/run-action@v2
   with:
-    project_id: 'your-project-id'
+    project_short_id: 'your-project-short-id'
     api_token: ${{ secrets.QATECH_API_TOKEN }}
     test_plan_short_id: 'jgbinp'
     applications_config: |
@@ -163,6 +163,7 @@ jobs:
     steps:
       - uses: QAdottech/run-action/change-review@v2
         with:
+          project_short_id: 'your-project-short-id'
           api_token: ${{ secrets.QATECH_API_TOKEN }}
           applications_config: |
             {
@@ -183,6 +184,7 @@ When invoked on a `pull_request` event the action automatically uses the event's
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
+| `project_short_id` | Your QA.tech project short ID. | Yes | - |
 | `api_token` | QA.tech API token. | Yes | - |
 | `applications_config` | JSON of `{ "applications": { appId: { "environment": {...} } } }`. Every entry must include an `environment` (one of `url` / `shortId` / `applicationBuildShortId`). | Yes | - |
 | `api_url` | Custom API URL if needed. | No | `https://api.qa.tech` |
