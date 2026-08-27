@@ -180,6 +180,10 @@ jobs:
 
 When invoked on a `pull_request` event the action automatically uses the event's PR URL. To review a different pull request, pass `pr_url` explicitly.
 
+### Run attribution
+
+The action reads `actor`, `branch`, `commitHash`, `commitMessage`, and `repository` from the workflow's `github` context and sends them with the request, so the runs a review starts are listed under the branch and commit of the change under review instead of the chat that started them. No extra inputs are needed. On a `pull_request` event the branch and commit come from the PR head rather than the synthetic merge ref the job checks out.
+
 ### Inputs
 
 | Input | Description | Required | Default |
