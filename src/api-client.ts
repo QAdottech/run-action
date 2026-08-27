@@ -1,5 +1,6 @@
 import * as core from "@actions/core";
 import fetch from "node-fetch";
+import { withRetry } from "./util";
 
 export interface RunDetails {
 	id: string;
@@ -14,6 +15,7 @@ export interface RunDetails {
 
 export interface Payload {
 	trigger: string;
+	projectShortId: string;
 	actor: string;
 	branch: string;
 	commitHash: string;
@@ -120,6 +122,7 @@ export interface ChangeReviewApplicationOverride {
 
 export interface ChangeReviewPayload {
 	mode: "pr";
+	projectShortId: string;
 	prUrl: string;
 	vcsProviderId: "github";
 	applicationOverrides: ChangeReviewApplicationOverride[];
@@ -158,23 +161,24 @@ export const startChangeReview = async (
 	payload: ChangeReviewPayload,
 ): Promise<ChatConversationResponse> => {
 	try {
-		const response = await fetch(`${baseUrl}/v1/chat/change-review`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${apiToken}`,
-			},
-			body: JSON.stringify(payload),
-		});
+		return await withRetry(async () => {
+			const response = await fetch(`${baseUrl}/v1/chat/change-review`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${apiToken}`,
+				},
+				body: JSON.stringify(payload),
+			});
 
-		if (!response.ok) {
-			throw new Error(
-				`HTTP error! status: ${response.status} - ${await response.text()}`,
-			);
-		}
+			if (!response.ok) {
+				throw new Error(
+					`HTTP error! status: ${response.status} - ${await response.text()}`,
+				);
+			}
 
-		const data = (await response.json()) as ChatConversationResponse;
-		return data;
+			return (await response.json()) as ChatConversationResponse;
+		}, "Start change review");
 	} catch (error) {
 		if (error instanceof Error) {
 			core.error(`Error starting change review: ${error.message}`);
@@ -192,23 +196,24 @@ export const getChatConversation = async (
 	limit = 20,
 ): Promise<ChatConversationResponse> => {
 	try {
-		const response = await fetch(
-			`${baseUrl}/v1/chat/${shortId}?limit=${limit}`,
-			{
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
+		return await withRetry(async () => {
+			const response = await fetch(
+				`${baseUrl}/v1/chat/${shortId}?limit=${limit}`,
+				{
+					headers: {
+						Authorization: `Bearer ${apiToken}`,
+					},
 				},
-			},
-		);
-
-		if (!response.ok) {
-			throw new Error(
-				`HTTP error! status: ${response.status} - ${await response.text()}`,
 			);
-		}
 
-		const data = (await response.json()) as ChatConversationResponse;
-		return data;
+			if (!response.ok) {
+				throw new Error(
+					`HTTP error! status: ${response.status} - ${await response.text()}`,
+				);
+			}
+
+			return (await response.json()) as ChatConversationResponse;
+		}, "Get chat conversation");
 	} catch (error) {
 		if (error instanceof Error) {
 			core.error(`Error getting chat conversation: ${error.message}`);

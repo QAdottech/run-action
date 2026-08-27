@@ -15,6 +15,7 @@ jobs:
     steps:
       - uses: QAdottech/run-action/change-review@v2
         with:
+          project_short_id: 'your-project-short-id'
           api_token: ${{ secrets.QATECH_API_TOKEN }}
           applications_config: |
             {
@@ -29,7 +30,7 @@ jobs:
           blocking: true
 ```
 
-That's the whole setup. On a `pull_request` event the action picks up the PR URL from the event payload automatically — pass `pr_url` if you want to review a different pull request. Your API token comes from your [QA.tech project settings](https://app.qa.tech/dashboard/current-project/settings/integrations), and application short IDs live under Test Plans → API Integration.
+That's the whole setup. On a `pull_request` event the action picks up the PR URL from the event payload automatically — pass `pr_url` if you want to review a different pull request. Your project short ID and API token come from your [QA.tech project settings](https://app.qa.tech/dashboard/current-project/settings/integrations), and application short IDs live under Test Plans → API Integration.
 
 ---
 
@@ -82,7 +83,7 @@ If your preview URL isn't known up front, resolve it in an earlier step and feed
 
 With `blocking: true` the step waits for the review to finish and fails the workflow if it comes back `FAILED` or `CANCELLED`. Combine that with a required status check and bad changes stop at the PR instead of at staging.
 
-Under the hood the action polls `GET /v1/chat/{chat_short_id}` every 20 seconds until the assistant's message reaches `COMPLETED`, `FAILED`, or `CANCELLED`, giving up after 60 minutes with a `TIMED_OUT` status.
+Under the hood the action polls `GET /v1/chat/{chat_short_id}` every 20 seconds until the assistant's message reaches `COMPLETED`, `FAILED`, or `CANCELLED`, giving up after 60 minutes with a `TIMED_OUT` status. While the review is still pending, it retries up to twice on transient timeouts.
 
 With `blocking: false` the action fires the review and returns immediately — handy if you'd rather read the verdict in the QA.tech dashboard or in your GitHub integration.
 
@@ -93,6 +94,7 @@ Use `context` to tell the agents what matters in this change: which flows to pri
 ```yaml
 - uses: QAdottech/run-action/change-review@v2
   with:
+    project_short_id: 'your-project-short-id'
     api_token: ${{ secrets.QATECH_API_TOKEN }}
     applications_config: ${{ steps.preview.outputs.config }}
     context: |
@@ -114,6 +116,7 @@ steps:
     id: review
     continue-on-error: true
     with:
+      project_short_id: 'your-project-short-id'
       api_token: ${{ secrets.QATECH_API_TOKEN }}
       applications_config: ${{ steps.preview.outputs.config }}
       blocking: true
@@ -142,6 +145,7 @@ steps:
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
+| `project_short_id` | Your QA.tech project short ID. | Yes | - |
 | `api_token` | QA.tech API token. | Yes | - |
 | `applications_config` | JSON of `{ "applications": { appId: { "environment": {...} } } }`. Every entry must include an `environment` (one of `url` / `shortId` / `applicationBuildShortId`). | Yes | - |
 | `blocking` | Wait for the review to finish and fail the step on a bad verdict. | No | `false` |
@@ -182,6 +186,7 @@ jobs:
     steps:
       - uses: QAdottech/run-action@v2
         with:
+          project_short_id: 'your-project-short-id'
           api_token: ${{ secrets.QATECH_API_TOKEN }}
           test_plan_short_id: 'jgbinp'
 ```
@@ -192,6 +197,7 @@ To run several test plans, use the action multiple times in the same workflow.
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
+| `project_short_id` | Your QA.tech project short ID. | Yes | - |
 | `api_token` | QA.tech API token. | Yes | - |
 | `test_plan_short_id` | Test plan short ID to run. Omit to run the project default. | No | - |
 | `blocking` | Wait for the run to complete and fail the step if it fails. | No | `false` |
@@ -215,6 +221,7 @@ With `blocking: true` the action creates the run, polls until it completes, sets
 ```yaml
 - uses: QAdottech/run-action@v2
   with:
+    project_short_id: 'your-project-short-id'
     api_token: ${{ secrets.QATECH_API_TOKEN }}
     blocking: true
 ```
@@ -226,6 +233,7 @@ Override which environment a test plan runs against — a preview deployment, a 
 ```yaml
 - uses: QAdottech/run-action@v2
   with:
+    project_short_id: 'your-project-short-id'
     api_token: ${{ secrets.QATECH_API_TOKEN }}
     test_plan_short_id: 'jgbinp'
     applications_config: |

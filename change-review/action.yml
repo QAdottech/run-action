@@ -3,6 +3,9 @@ description: "Trigger a QA.tech change review on a GitHub pull request."
 author: "QA Tech AB"
 
 inputs:
+  project_short_id:
+    description: "The QA.tech project short ID."
+    required: true
   api_token:
     description: "The API key for the QA.tech project."
     required: true
@@ -10,7 +13,7 @@ inputs:
     description: "The API url for QA.techs API. Defaults to production."
     required: false
   blocking:
-    description: "Whether the action should wait for the change review to complete. Blocking polls stop after an internal 60 minute timeout."
+    description: "Whether the action should wait for the change review to complete. Blocking polls stop after an internal 60 minute timeout, with up to 2 retries while the review is still pending."
     required: false
     default: "false"
   applications_config:
