@@ -129,6 +129,10 @@ describe("Change Review GitHub Action", () => {
 						},
 					},
 				],
+				actor: "testUser",
+				branch: "refs/heads/main",
+				commitHash: "abc123",
+				repository: "test-owner/test-repo",
 			},
 		);
 		expect(core.setOutput).toHaveBeenCalledWith("chat_created", "true");
@@ -161,6 +165,71 @@ describe("Change Review GitHub Action", () => {
 			}),
 		);
 		expect(core.setFailed).not.toHaveBeenCalled();
+	});
+
+	it("attributes the review to the PR head rather than the merge ref", async () => {
+		(github.context as { payload: Record<string, unknown> }).payload = {
+			pull_request: {
+				html_url: "https://github.com/test-owner/test-repo/pull/99",
+				head: {
+					ref: "fix/login",
+					sha: "b90f8231c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9",
+				},
+			},
+		};
+
+		vi.mocked(startChangeReview).mockResolvedValueOnce(mockChatResponse());
+
+		await run();
+
+		expect(startChangeReview).toHaveBeenCalledWith(
+			expect.any(String),
+			expect.any(String),
+			expect.objectContaining({
+				actor: "testUser",
+				branch: "fix/login",
+				commitHash: "b90f8231c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9",
+				repository: "test-owner/test-repo",
+			}),
+		);
+	});
+
+	it("sends only the subject line of a push event commit message", async () => {
+		setInputs({
+			project_short_id: "proj_12345",
+			api_token: "test-token-12345",
+			applications_config: DEFAULT_APPLICATIONS_CONFIG,
+			pr_url: "https://github.com/test-owner/test-repo/pull/42",
+		});
+		(github.context as { payload: Record<string, unknown> }).payload = {
+			head_commit: { message: "Deploy to staging\n\nLonger body here." },
+		};
+
+		vi.mocked(startChangeReview).mockResolvedValueOnce(mockChatResponse());
+
+		await run();
+
+		expect(startChangeReview).toHaveBeenCalledWith(
+			expect.any(String),
+			expect.any(String),
+			expect.objectContaining({ commitMessage: "Deploy to staging" }),
+		);
+	});
+
+	it("omits git fields that the event payload does not provide", async () => {
+		setInputs({
+			project_short_id: "proj_12345",
+			api_token: "test-token-12345",
+			applications_config: DEFAULT_APPLICATIONS_CONFIG,
+			pr_url: "https://github.com/test-owner/test-repo/pull/42",
+		});
+
+		vi.mocked(startChangeReview).mockResolvedValueOnce(mockChatResponse());
+
+		await run();
+
+		const payload = vi.mocked(startChangeReview).mock.calls[0]?.[2];
+		expect(payload).not.toHaveProperty("commitMessage");
 	});
 
 	it("forwards the optional context input", async () => {

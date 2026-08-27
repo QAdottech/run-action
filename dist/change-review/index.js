@@ -39519,6 +39519,36 @@ const resolvePrUrl = (input) => {
         ? htmlUrl
         : undefined;
 };
+const readNonEmptyString = (value) => typeof value === "string" && value.trim().length > 0 ? value : undefined;
+const readNested = (parent, key) => isRecord(parent) ? parent[key] : undefined;
+const resolveRepository = () => {
+    // context.repo throws when GITHUB_REPOSITORY is absent, and attribution is
+    // never worth failing the review over.
+    try {
+        const { owner, repo } = github.context.repo;
+        return owner && repo ? `${owner}/${repo}` : undefined;
+    }
+    catch {
+        return undefined;
+    }
+};
+const resolveGitTriggerFields = () => {
+    const { actor, ref, sha, payload } = github.context;
+    const head = readNested(readNested(payload, "pull_request"), "head");
+    // pull_request events run against a synthetic merge ref, so the PR head is
+    // the branch and commit the review is actually about.
+    const branch = readNonEmptyString(readNested(head, "ref")) ?? readNonEmptyString(ref);
+    const commitHash = readNonEmptyString(readNested(head, "sha")) ?? readNonEmptyString(sha);
+    const commitMessage = readNonEmptyString(readNested(readNested(payload, "head_commit"), "message"));
+    const repository = resolveRepository();
+    return {
+        ...(readNonEmptyString(actor) ? { actor } : {}),
+        ...(branch ? { branch } : {}),
+        ...(commitHash ? { commitHash } : {}),
+        ...(commitMessage ? { commitMessage: commitMessage.split("\n")[0] } : {}),
+        ...(repository ? { repository } : {}),
+    };
+};
 async function run() {
     try {
         lib_core.debug("Starting the change-review action");
@@ -39568,6 +39598,7 @@ async function run() {
             vcsProviderId: "github",
             applicationOverrides,
             ...(context ? { context } : {}),
+            ...resolveGitTriggerFields(),
         };
         lib_core.debug(`Starting change review with payload: ${JSON.stringify(payload)}`);
         const conversation = await startChangeReview(baseApiUrl, apiToken, payload);
