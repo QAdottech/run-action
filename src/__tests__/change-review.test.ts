@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { getChatConversation, startChangeReview } from "../api-client";
 import { run } from "../change-review";
 
@@ -121,6 +122,9 @@ describe("Change Review GitHub Action", () => {
 				projectShortId: "proj_12345",
 				prUrl: "https://github.com/test-owner/test-repo/pull/42",
 				vcsProviderId: "github",
+				actor: "testUser",
+				branch: "refs/heads/main",
+				repository: "test-owner/test-repo",
 				applicationOverrides: [
 					{
 						applicationShortId: "app_ONdgMD",

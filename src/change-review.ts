@@ -1,5 +1,6 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
+
 import {
 	type ChangeReviewApplicationOverride,
 	type ChangeReviewEnvironmentOverride,
@@ -164,6 +165,22 @@ export async function run(): Promise<void> {
 			return;
 		}
 
+		const commitHashInput = core.getInput("commit_hash").trim();
+		const { actor, ref, repo, payload: eventPayload } = github.context;
+		const pullRequest = isRecord(eventPayload)
+			? eventPayload.pull_request
+			: undefined;
+		const headSha =
+			isRecord(pullRequest) && isRecord(pullRequest.head)
+				? pullRequest.head.sha
+				: undefined;
+		const commitHash =
+			commitHashInput.length > 0
+				? commitHashInput
+				: typeof headSha === "string" && headSha.length > 0
+					? headSha
+					: undefined;
+
 		const payload: ChangeReviewPayload = {
 			mode: "pr",
 			projectShortId,
@@ -171,6 +188,10 @@ export async function run(): Promise<void> {
 			vcsProviderId: "github",
 			applicationOverrides,
 			...(context ? { context } : {}),
+			...(commitHash ? { commitHash } : {}),
+			actor,
+			branch: ref,
+			repository: `${repo.owner}/${repo.repo}`,
 		};
 
 		core.debug(

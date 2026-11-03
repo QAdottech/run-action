@@ -1,5 +1,6 @@
 import * as core from "@actions/core";
 import fetch from "node-fetch";
+
 import { withRetry } from "./util";
 
 export interface RunDetails {
@@ -127,6 +128,10 @@ export interface ChangeReviewPayload {
 	vcsProviderId: "github";
 	applicationOverrides: ChangeReviewApplicationOverride[];
 	context?: string;
+	commitHash?: string;
+	actor?: string;
+	branch?: string;
+	repository?: string;
 }
 
 export type ChatMessageStatus =
@@ -184,6 +189,51 @@ export const startChangeReview = async (
 			core.error(`Error starting change review: ${error.message}`);
 		} else {
 			core.error("An unknown error occurred starting change review");
+		}
+		throw error;
+	}
+};
+
+export interface PrepareChangeReviewPayload {
+	projectShortId: string;
+	prUrl: string;
+	commitHash?: string;
+	context?: string;
+	actor?: string;
+	branch?: string;
+	commitMessage?: string;
+	repository?: string;
+}
+
+export const prepareChangeReview = async (
+	baseUrl: string,
+	apiToken: string,
+	payload: PrepareChangeReviewPayload,
+): Promise<ChatConversationResponse> => {
+	try {
+		return await withRetry(async () => {
+			const response = await fetch(`${baseUrl}/v1/chat/change-review/prepare`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${apiToken}`,
+				},
+				body: JSON.stringify(payload),
+			});
+
+			if (!response.ok) {
+				throw new Error(
+					`HTTP error! status: ${response.status} - ${await response.text()}`,
+				);
+			}
+
+			return (await response.json()) as ChatConversationResponse;
+		}, "Prepare change review");
+	} catch (error) {
+		if (error instanceof Error) {
+			core.error(`Error preparing change review: ${error.message}`);
+		} else {
+			core.error("An unknown error occurred preparing change review");
 		}
 		throw error;
 	}
