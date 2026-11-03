@@ -13,6 +13,7 @@ import {
 	BLOCKING_TIMEOUT_MS,
 	BLOCKING_TIMEOUT_RETRIES,
 	POLLING_INTERVAL,
+	getOptionalBooleanInput,
 	handleUnexpectedError,
 	sleep,
 	validateUrl,
@@ -166,6 +167,9 @@ export async function run(): Promise<void> {
 		}
 
 		const commitHashInput = core.getInput("commit_hash").trim();
+		const disableReviewComments = getOptionalBooleanInput(
+			"disable_review_comments",
+		);
 		const { actor, ref, repo, payload: eventPayload } = github.context;
 		const pullRequest = isRecord(eventPayload)
 			? eventPayload.pull_request
@@ -189,6 +193,7 @@ export async function run(): Promise<void> {
 			applicationOverrides,
 			...(context ? { context } : {}),
 			...(commitHash ? { commitHash } : {}),
+			...(disableReviewComments !== undefined ? { disableReviewComments } : {}),
 			actor,
 			branch: ref,
 			repository: `${repo.owner}/${repo.repo}`,

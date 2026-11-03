@@ -39286,6 +39286,19 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 ;// CONCATENATED MODULE: ./src/util.ts
 
 const BASE_URL = "https://api.qa.tech";
+const TRUE_VALUES = new Set(["true", "True", "TRUE"]);
+const FALSE_VALUES = new Set(["false", "False", "FALSE"]);
+/** Like core.getBooleanInput, but an unset input is undefined so the API keeps its own default. */
+const getOptionalBooleanInput = (name) => {
+    const value = lib_core.getInput(name).trim();
+    if (value.length === 0)
+        return undefined;
+    if (TRUE_VALUES.has(value))
+        return true;
+    if (FALSE_VALUES.has(value))
+        return false;
+    throw new TypeError(`Input "${name}" must be one of: true | True | TRUE | false | False | FALSE`);
+};
 const POLLING_INTERVAL = 20_000;
 const BLOCKING_TIMEOUT_MS = (/* unused pure expression or super */ null && (60 * 60_000));
 /** Extra blocking waits after the first timeout while the review is still pending. */
@@ -39539,6 +39552,7 @@ async function run() {
         const contextInput = lib_core.getInput("context");
         const context = contextInput.length > 0 ? contextInput : undefined;
         const commitHash = resolveCommitHash(lib_core.getInput("commit_hash"));
+        const disableReviewComments = getOptionalBooleanInput("disable_review_comments");
         const { actor, ref, repo } = github.context;
         const payload = {
             projectShortId,
@@ -39548,6 +39562,7 @@ async function run() {
             repository: `${repo.owner}/${repo.repo}`,
             ...(context ? { context } : {}),
             ...(commitHash ? { commitHash } : {}),
+            ...(disableReviewComments !== undefined ? { disableReviewComments } : {}),
         };
         lib_core.debug(`Preparing change review with payload: ${JSON.stringify(payload)}`);
         const conversation = await prepareChangeReview(baseApiUrl, apiToken, payload);

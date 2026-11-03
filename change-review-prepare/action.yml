@@ -21,6 +21,9 @@ inputs:
   pr_url:
     description: "Pull request URL to review. Defaults to the URL of the pull_request event when available."
     required: false
+  disable_review_comments:
+    description: "When true, the agent does not post review comments on the pull request. The review still runs and is shown in QA.tech, and the PR Review check is still reported. Stored on the PR's review conversation, so later reviews stay silent until a request sends false. Defaults to posting comments."
+    required: false
 
 outputs:
   chat_created:
