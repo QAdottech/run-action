@@ -39308,7 +39308,7 @@ const isRetryableError = (error) => {
         message.includes("etimedout") ||
         message.includes("socket hang up"));
 };
-const withRetry = async (operation, label, maxAttempts = API_RETRY_ATTEMPTS, delayMs = API_RETRY_DELAY_MS) => {
+const util_withRetry = async (operation, label, maxAttempts = API_RETRY_ATTEMPTS, delayMs = API_RETRY_DELAY_MS) => {
     let lastError;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
@@ -39400,7 +39400,7 @@ const getRunStatus = async (baseUrl, shortId, apiToken) => {
 };
 const startChangeReview = async (baseUrl, apiToken, payload) => {
     try {
-        return await withRetry(async () => {
+        return await util_withRetry(async () => {
             const response = await src_fetch(`${baseUrl}/v1/chat/change-review`, {
                 method: "POST",
                 headers: {
@@ -39425,9 +39425,36 @@ const startChangeReview = async (baseUrl, apiToken, payload) => {
         throw error;
     }
 };
-const getChatConversation = async (baseUrl, shortId, apiToken, limit = 20) => {
+const prepareChangeReview = async (baseUrl, apiToken, payload) => {
     try {
         return await withRetry(async () => {
+            const response = await fetch(`${baseUrl}/v1/chat/change-review/prepare`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${apiToken}`,
+                },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} - ${await response.text()}`);
+            }
+            return (await response.json());
+        }, "Prepare change review");
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            core.error(`Error preparing change review: ${error.message}`);
+        }
+        else {
+            core.error("An unknown error occurred preparing change review");
+        }
+        throw error;
+    }
+};
+const getChatConversation = async (baseUrl, shortId, apiToken, limit = 20) => {
+    try {
+        return await util_withRetry(async () => {
             const response = await src_fetch(`${baseUrl}/v1/chat/${shortId}?limit=${limit}`, {
                 headers: {
                     Authorization: `Bearer ${apiToken}`,
@@ -39561,6 +39588,19 @@ async function run() {
             lib_core.setFailed('A pull request URL is required. Provide the "pr_url" input or run the action on a pull_request event.');
             return;
         }
+        const commitHashInput = lib_core.getInput("commit_hash").trim();
+        const { actor, ref, repo, payload: eventPayload } = github.context;
+        const pullRequest = isRecord(eventPayload)
+            ? eventPayload.pull_request
+            : undefined;
+        const headSha = isRecord(pullRequest) && isRecord(pullRequest.head)
+            ? pullRequest.head.sha
+            : undefined;
+        const commitHash = commitHashInput.length > 0
+            ? commitHashInput
+            : typeof headSha === "string" && headSha.length > 0
+                ? headSha
+                : undefined;
         const payload = {
             mode: "pr",
             projectShortId,
@@ -39568,6 +39608,10 @@ async function run() {
             vcsProviderId: "github",
             applicationOverrides,
             ...(context ? { context } : {}),
+            ...(commitHash ? { commitHash } : {}),
+            actor,
+            branch: ref,
+            repository: `${repo.owner}/${repo.repo}`,
         };
         lib_core.debug(`Starting change review with payload: ${JSON.stringify(payload)}`);
         const conversation = await startChangeReview(baseApiUrl, apiToken, payload);

@@ -39425,6 +39425,33 @@ const startChangeReview = async (baseUrl, apiToken, payload) => {
         throw error;
     }
 };
+const prepareChangeReview = async (baseUrl, apiToken, payload) => {
+    try {
+        return await withRetry(async () => {
+            const response = await fetch(`${baseUrl}/v1/chat/change-review/prepare`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${apiToken}`,
+                },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} - ${await response.text()}`);
+            }
+            return (await response.json());
+        }, "Prepare change review");
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            core.error(`Error preparing change review: ${error.message}`);
+        }
+        else {
+            core.error("An unknown error occurred preparing change review");
+        }
+        throw error;
+    }
+};
 const getChatConversation = async (baseUrl, shortId, apiToken, limit = 20) => {
     try {
         return await withRetry(async () => {
