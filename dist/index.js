@@ -39286,6 +39286,19 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 ;// CONCATENATED MODULE: ./src/util.ts
 
 const BASE_URL = "https://api.qa.tech";
+const TRUE_VALUES = new Set(["true", "True", "TRUE"]);
+const FALSE_VALUES = new Set(["false", "False", "FALSE"]);
+/** Like core.getBooleanInput, but an unset input is undefined so the API keeps its own default. */
+const getOptionalBooleanInput = (name) => {
+    const value = core.getInput(name).trim();
+    if (value.length === 0)
+        return undefined;
+    if (TRUE_VALUES.has(value))
+        return true;
+    if (FALSE_VALUES.has(value))
+        return false;
+    throw new TypeError(`Input "${name}" must be one of: true | True | TRUE | false | False | FALSE`);
+};
 const POLLING_INTERVAL = 20_000;
 const BLOCKING_TIMEOUT_MS = 60 * 60_000;
 /** Extra blocking waits after the first timeout while the review is still pending. */

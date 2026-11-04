@@ -131,6 +131,55 @@ describe("Change Review Prepare GitHub Action", () => {
 		);
 	});
 
+	it("forwards disable_review_comments as disableReviewComments", async () => {
+		setInputs({
+			project_short_id: "proj_12345",
+			api_token: "test-token-12345",
+			pr_url: "https://github.com/test-owner/test-repo/pull/42",
+			disable_review_comments: "true",
+		});
+
+		vi.mocked(prepareChangeReview).mockResolvedValueOnce(mockChatResponse());
+
+		await run();
+
+		expect(prepareChangeReview).toHaveBeenCalledWith(
+			expect.any(String),
+			expect.any(String),
+			expect.objectContaining({ disableReviewComments: true }),
+		);
+	});
+
+	it("omits disableReviewComments when the input is not set", async () => {
+		setInputs({
+			project_short_id: "proj_12345",
+			api_token: "test-token-12345",
+			pr_url: "https://github.com/test-owner/test-repo/pull/42",
+		});
+
+		vi.mocked(prepareChangeReview).mockResolvedValueOnce(mockChatResponse());
+
+		await run();
+
+		expect(
+			vi.mocked(prepareChangeReview).mock.calls[0]?.[2],
+		).not.toHaveProperty("disableReviewComments");
+	});
+
+	it("fails on an invalid disable_review_comments value", async () => {
+		setInputs({
+			project_short_id: "proj_12345",
+			api_token: "test-token-12345",
+			pr_url: "https://github.com/test-owner/test-repo/pull/42",
+			disable_review_comments: "yes",
+		});
+
+		await run();
+
+		expect(prepareChangeReview).not.toHaveBeenCalled();
+		expect(core.setFailed).toHaveBeenCalled();
+	});
+
 	it("fails when no PR URL can be resolved", async () => {
 		await run();
 

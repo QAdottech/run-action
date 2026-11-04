@@ -187,6 +187,26 @@ describe("Change Review GitHub Action", () => {
 		);
 	});
 
+	it("forwards disable_review_comments as disableReviewComments", async () => {
+		setInputs({
+			project_short_id: "proj_12345",
+			api_token: "test-token-12345",
+			applications_config: DEFAULT_APPLICATIONS_CONFIG,
+			pr_url: "https://github.com/test-owner/test-repo/pull/42",
+			disable_review_comments: "false",
+		});
+
+		vi.mocked(startChangeReview).mockResolvedValueOnce(mockChatResponse());
+
+		await run();
+
+		expect(startChangeReview).toHaveBeenCalledWith(
+			expect.any(String),
+			expect.any(String),
+			expect.objectContaining({ disableReviewComments: false }),
+		);
+	});
+
 	it("fails when project_short_id is missing", async () => {
 		const inputs: Record<string, string> = {
 			api_token: "test-token-12345",

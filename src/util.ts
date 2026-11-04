@@ -2,6 +2,20 @@ import * as core from "@actions/core";
 
 export const BASE_URL = "https://api.qa.tech";
 
+const TRUE_VALUES = new Set(["true", "True", "TRUE"]);
+const FALSE_VALUES = new Set(["false", "False", "FALSE"]);
+
+/** Like core.getBooleanInput, but an unset input is undefined so the API keeps its own default. */
+export const getOptionalBooleanInput = (name: string): boolean | undefined => {
+	const value = core.getInput(name).trim();
+	if (value.length === 0) return undefined;
+	if (TRUE_VALUES.has(value)) return true;
+	if (FALSE_VALUES.has(value)) return false;
+	throw new TypeError(
+		`Input "${name}" must be one of: true | True | TRUE | false | False | FALSE`,
+	);
+};
+
 export const POLLING_INTERVAL = 20_000;
 
 export const BLOCKING_TIMEOUT_MS = 60 * 60_000;

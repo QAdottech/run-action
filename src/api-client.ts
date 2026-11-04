@@ -129,6 +129,7 @@ export interface ChangeReviewPayload {
 	applicationOverrides: ChangeReviewApplicationOverride[];
 	context?: string;
 	commitHash?: string;
+	disableReviewComments?: boolean;
 	actor?: string;
 	branch?: string;
 	repository?: string;
@@ -199,6 +200,7 @@ export interface PrepareChangeReviewPayload {
 	prUrl: string;
 	commitHash?: string;
 	context?: string;
+	disableReviewComments?: boolean;
 	actor?: string;
 	branch?: string;
 	commitMessage?: string;

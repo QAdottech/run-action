@@ -2,7 +2,12 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 
 import { prepareChangeReview } from "./api-client";
-import { BASE_URL, handleUnexpectedError, validateUrl } from "./util";
+import {
+	BASE_URL,
+	getOptionalBooleanInput,
+	handleUnexpectedError,
+	validateUrl,
+} from "./util";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
@@ -73,6 +78,9 @@ export async function run(): Promise<void> {
 		const context = contextInput.length > 0 ? contextInput : undefined;
 
 		const commitHash = resolveCommitHash(core.getInput("commit_hash"));
+		const disableReviewComments = getOptionalBooleanInput(
+			"disable_review_comments",
+		);
 		const { actor, ref, repo } = github.context;
 
 		const payload = {
@@ -83,6 +91,7 @@ export async function run(): Promise<void> {
 			repository: `${repo.owner}/${repo.repo}`,
 			...(context ? { context } : {}),
 			...(commitHash ? { commitHash } : {}),
+			...(disableReviewComments !== undefined ? { disableReviewComments } : {}),
 		};
 
 		core.debug(
