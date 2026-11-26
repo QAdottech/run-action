@@ -121,18 +121,24 @@ export interface ChangeReviewApplicationOverride {
 	environment: ChangeReviewEnvironmentOverride;
 }
 
-export interface ChangeReviewPayload {
+/** Git metadata the platform uses to attribute the runs a review starts. */
+export interface GitTriggerFields {
+	actor?: string;
+	branch?: string;
+	commitHash?: string;
+	commitMessage?: string;
+	/** `owner/name`. */
+	repository?: string;
+}
+
+export interface ChangeReviewPayload extends GitTriggerFields {
 	mode: "pr";
 	projectShortId: string;
 	prUrl: string;
 	vcsProviderId: "github";
 	applicationOverrides: ChangeReviewApplicationOverride[];
 	context?: string;
-	commitHash?: string;
 	disableReviewComments?: boolean;
-	actor?: string;
-	branch?: string;
-	repository?: string;
 }
 
 export type ChatMessageStatus =

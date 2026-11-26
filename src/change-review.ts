@@ -5,6 +5,7 @@ import {
 	type ChangeReviewApplicationOverride,
 	type ChangeReviewEnvironmentOverride,
 	type ChangeReviewPayload,
+	type GitTriggerFields,
 	getChatConversation,
 	startChangeReview,
 } from "./api-client";
@@ -114,6 +115,47 @@ const resolvePrUrl = (input: string): string | undefined => {
 		: undefined;
 };
 
+const readNonEmptyString = (value: unknown): string | undefined =>
+	typeof value === "string" && value.trim().length > 0 ? value : undefined;
+
+const readNested = (parent: unknown, key: string): unknown =>
+	isRecord(parent) ? parent[key] : undefined;
+
+const resolveRepository = (): string | undefined => {
+	// context.repo throws when GITHUB_REPOSITORY is absent, and attribution is
+	// never worth failing the review over.
+	try {
+		const { owner, repo } = github.context.repo;
+		return owner && repo ? `${owner}/${repo}` : undefined;
+	} catch {
+		return undefined;
+	}
+};
+
+const resolveGitTriggerFields = (): GitTriggerFields => {
+	const { actor, ref, sha, payload } = github.context;
+	const head = readNested(readNested(payload, "pull_request"), "head");
+
+	// pull_request events run against a synthetic merge ref, so the PR head is
+	// the branch and commit the review is actually about.
+	const branch =
+		readNonEmptyString(readNested(head, "ref")) ?? readNonEmptyString(ref);
+	const commitHash =
+		readNonEmptyString(readNested(head, "sha")) ?? readNonEmptyString(sha);
+	const commitMessage = readNonEmptyString(
+		readNested(readNested(payload, "head_commit"), "message"),
+	);
+	const repository = resolveRepository();
+
+	return {
+		...(readNonEmptyString(actor) ? { actor } : {}),
+		...(branch ? { branch } : {}),
+		...(commitHash ? { commitHash } : {}),
+		...(commitMessage ? { commitMessage: commitMessage.split("\n")[0] } : {}),
+		...(repository ? { repository } : {}),
+	};
+};
+
 export async function run(): Promise<void> {
 	try {
 		core.debug("Starting the change-review action");
@@ -170,20 +212,6 @@ export async function run(): Promise<void> {
 		const disableReviewComments = getOptionalBooleanInput(
 			"disable_review_comments",
 		);
-		const { actor, ref, repo, payload: eventPayload } = github.context;
-		const pullRequest = isRecord(eventPayload)
-			? eventPayload.pull_request
-			: undefined;
-		const headSha =
-			isRecord(pullRequest) && isRecord(pullRequest.head)
-				? pullRequest.head.sha
-				: undefined;
-		const commitHash =
-			commitHashInput.length > 0
-				? commitHashInput
-				: typeof headSha === "string" && headSha.length > 0
-					? headSha
-					: undefined;
 
 		const payload: ChangeReviewPayload = {
 			mode: "pr",
@@ -192,11 +220,9 @@ export async function run(): Promise<void> {
 			vcsProviderId: "github",
 			applicationOverrides,
 			...(context ? { context } : {}),
-			...(commitHash ? { commitHash } : {}),
+			...resolveGitTriggerFields(),
+			...(commitHashInput.length > 0 ? { commitHash: commitHashInput } : {}),
 			...(disableReviewComments !== undefined ? { disableReviewComments } : {}),
-			actor,
-			branch: ref,
-			repository: `${repo.owner}/${repo.repo}`,
 		};
 
 		core.debug(
